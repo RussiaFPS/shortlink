@@ -25,11 +25,11 @@ func (h *URLShortenerHandler) GetShortUrl(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	contentType := r.Header.Get("Content-Type")
-	if contentType != "text/plain" {
-		http.Error(w, "Content-Type must be text/plain", http.StatusBadRequest)
-		return
-	}
+	//contentType := r.Header.Get("Content-Type")
+	//if contentType != "text/plain" {
+	//	http.Error(w, "Content-Type must be text/plain", http.StatusBadRequest)
+	//	return
+	//}
 
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
