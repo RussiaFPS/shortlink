@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const lenShortUrl = 8
+const lenShortURL = 8
 
 type URLShortenerHandler struct {
 	s *service.URLShortenerService
@@ -15,21 +15,15 @@ type URLShortenerHandler struct {
 
 func NewURLShortenerHandler() *URLShortenerHandler {
 	return &URLShortenerHandler{
-		s: service.NewURLShortener(lenShortUrl),
+		s: service.NewURLShortener(lenShortURL),
 	}
 }
 
-func (h *URLShortenerHandler) GetShortUrl(w http.ResponseWriter, r *http.Request) {
+func (h *URLShortenerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST method is allowed", http.StatusBadRequest)
 		return
 	}
-
-	//contentType := r.Header.Get("Content-Type")
-	//if contentType != "text/plain" {
-	//	http.Error(w, "Content-Type must be text/plain", http.StatusBadRequest)
-	//	return
-	//}
 
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
@@ -50,7 +44,7 @@ func (h *URLShortenerHandler) GetShortUrl(w http.ResponseWriter, r *http.Request
 	w.Write([]byte(shortURL))
 }
 
-func (h *URLShortenerHandler) GetOriginUrl(w http.ResponseWriter, r *http.Request) {
+func (h *URLShortenerHandler) GetOriginURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Only GET method is allowed", http.StatusBadRequest)
 		return
