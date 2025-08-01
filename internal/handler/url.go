@@ -10,13 +10,24 @@ import (
 const lenShortURL = 8
 
 type URLShortenerHandler struct {
-	s *service.URLShortenerService
+	mux *http.ServeMux
+	s   *service.URLShortenerService
 }
 
 func NewURLShortenerHandler() *URLShortenerHandler {
-	return &URLShortenerHandler{
-		s: service.NewURLShortener(lenShortURL),
+	h := &URLShortenerHandler{
+		mux: http.NewServeMux(),
+		s:   service.NewURLShortener(lenShortURL),
 	}
+
+	h.mux.HandleFunc("/", h.GetShortURL)
+	h.mux.HandleFunc("/{id}", h.GetOriginURL)
+
+	return h
+}
+
+func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mux.ServeHTTP(w, r)
 }
 
 func (h *URLShortenerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
