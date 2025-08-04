@@ -1,14 +1,16 @@
 package main
 
 import (
+	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/handler"
 	"log"
 	"net/http"
 )
 
 func main() {
-	h := handler.NewURLShortenerHandler()
+	cfg := config.NewConfig()
+	h := handler.NewURLShortenerHandler(cfg)
 
-	log.Println("Server started at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", h))
+	log.Printf("Server started at %v", cfg.ServerAddr)
+	log.Fatal(http.ListenAndServe(cfg.ServerAddr, h))
 }

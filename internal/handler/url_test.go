@@ -1,14 +1,23 @@
 package handler
 
 import (
+	"github.com/RussiaFPS/shortlink/internal/config"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
 
+var testCfg *config.Config
+
+func TestMain(m *testing.M) {
+	testCfg = config.NewConfig()
+	os.Exit(m.Run())
+}
+
 func TestGetShortURL(t *testing.T) {
-	h := NewURLShortenerHandler()
+	h := NewURLShortenerHandler(testCfg)
 
 	tests := []struct {
 		name           string
@@ -54,7 +63,7 @@ func TestGetShortURL(t *testing.T) {
 			}
 
 			if tt.expectedStatus == http.StatusCreated {
-				if !strings.HasPrefix(rr.Body.String(), "http://localhost:8080/") {
+				if !strings.HasPrefix(rr.Body.String(), testCfg.BaseURL) {
 					t.Errorf("expected shortened URL, got %s", rr.Body.String())
 				}
 			}
@@ -63,14 +72,14 @@ func TestGetShortURL(t *testing.T) {
 }
 
 func TestGetOriginURL(t *testing.T) {
-	h := NewURLShortenerHandler()
+	h := NewURLShortenerHandler(testCfg)
 	originalURL := "https://practicum.yandex.ru/"
 
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(originalURL))
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
 
-	shortID := strings.TrimPrefix(rr.Body.String(), "http://localhost:8080/")
+	shortID := strings.TrimPrefix(rr.Body.String(), testCfg.BaseURL+"/")
 	tests := []struct {
 		name           string
 		method         string

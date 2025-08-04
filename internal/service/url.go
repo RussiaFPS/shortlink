@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/RussiaFPS/shortlink/internal/config"
 	"math/rand"
 	"net/url"
 	"sync"
@@ -10,15 +11,17 @@ import (
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 type URLShortenerService struct {
+	cfg      *config.Config
 	mu       sync.Mutex
 	urls     map[string]string // {shortID: originalURL}
 	shortLen int
 }
 
-func NewURLShortener(shortLen int) *URLShortenerService {
+func NewURLShortener(cfg *config.Config, shortLen int) *URLShortenerService {
 	return &URLShortenerService{
 		urls:     make(map[string]string),
 		shortLen: shortLen,
+		cfg:      cfg,
 	}
 }
 
@@ -40,14 +43,14 @@ func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
 
 	for shortID, existingURL := range s.urls {
 		if existingURL == originalURL {
-			return fmt.Sprintf("http://localhost:8080/%s", shortID), nil
+			return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortID), nil
 		}
 	}
 
 	shortID := s.generateShortID()
 	s.urls[shortID] = originalURL
 
-	return fmt.Sprintf("http://localhost:8080/%s", shortID), nil
+	return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortID), nil
 }
 
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {

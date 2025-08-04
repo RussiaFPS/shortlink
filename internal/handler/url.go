@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/service"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -13,12 +14,14 @@ const lenShortURL = 8
 type URLShortenerHandler struct {
 	mux *gin.Engine
 	s   *service.URLShortenerService
+	cfg *config.Config
 }
 
-func NewURLShortenerHandler() *URLShortenerHandler {
+func NewURLShortenerHandler(cfg *config.Config) *URLShortenerHandler {
 	h := &URLShortenerHandler{
 		mux: gin.Default(),
-		s:   service.NewURLShortener(lenShortURL),
+		s:   service.NewURLShortener(cfg, lenShortURL),
+		cfg: cfg,
 	}
 
 	h.mux.POST("/", h.GetShortURL)
