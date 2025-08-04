@@ -26,7 +26,7 @@ func TestGetShortURL(t *testing.T) {
 			name:           "Invalid method (GET)",
 			method:         http.MethodGet,
 			body:           "https://practicum.yandex.ru/",
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:           "Empty URL",
@@ -89,7 +89,7 @@ func TestGetOriginURL(t *testing.T) {
 			name:           "Invalid method (POST)",
 			method:         http.MethodPost,
 			path:           "/" + shortID,
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:           "Non-existent short ID",
@@ -101,7 +101,7 @@ func TestGetOriginURL(t *testing.T) {
 			name:           "Empty short ID",
 			method:         http.MethodGet,
 			path:           "/",
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusNotFound,
 		},
 	}
 

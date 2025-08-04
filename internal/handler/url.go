@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/RussiaFPS/shortlink/internal/service"
+	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
 	"strings"
@@ -10,18 +11,18 @@ import (
 const lenShortURL = 8
 
 type URLShortenerHandler struct {
-	mux *http.ServeMux
+	mux *gin.Engine
 	s   *service.URLShortenerService
 }
 
 func NewURLShortenerHandler() *URLShortenerHandler {
 	h := &URLShortenerHandler{
-		mux: http.NewServeMux(),
+		mux: gin.Default(),
 		s:   service.NewURLShortener(lenShortURL),
 	}
 
-	h.mux.HandleFunc("/", h.GetShortURL)
-	h.mux.HandleFunc("/{id}", h.GetOriginURL)
+	h.mux.POST("/", h.GetShortURL)
+	h.mux.GET("/:id", h.GetOriginURL)
 
 	return h
 }
@@ -30,49 +31,34 @@ func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	h.mux.ServeHTTP(w, r)
 }
 
-func (h *URLShortenerHandler) GetShortURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST method is allowed", http.StatusBadRequest)
-		return
-	}
-
-	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
+func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
+	defer c.Request.Body.Close()
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	originalURL := strings.TrimSpace(string(body))
 	shortURL, err := h.s.Shorten(originalURL)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shortURL))
+	c.Header("Content-Type", "text/plain")
+	c.String(http.StatusCreated, shortURL)
 }
 
-func (h *URLShortenerHandler) GetOriginURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET method is allowed", http.StatusBadRequest)
-		return
-	}
-
-	id := r.PathValue("id")
-	if id == "" {
-		http.Error(w, "Missing short URL ID", http.StatusBadRequest)
-		return
-	}
+func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
+	id := c.Param("id")
 
 	originalURL, exists := h.s.GetOriginal(id)
 	if !exists {
-		http.Error(w, "Short URL not found", http.StatusNotFound)
+		c.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
-	w.Header().Set("Location", originalURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	c.Header("Location", originalURL)
+	c.Redirect(http.StatusTemporaryRedirect, originalURL)
 }
