@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -43,6 +44,11 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 	}
 
 	originalURL := strings.TrimSpace(string(body))
+	if _, err = url.ParseRequestURI(originalURL); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
 	shortURL, err := h.s.Shorten(originalURL)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
