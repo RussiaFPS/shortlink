@@ -8,7 +8,11 @@ import (
 )
 
 func main() {
-	cfg := config.NewConfig()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatalf("failed to build config: %v", err)
+	}
+
 	h := handler.NewURLShortenerHandler(cfg)
 
 	log.Printf("Server started at %v", cfg.ServerAddr)
