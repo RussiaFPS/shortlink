@@ -27,15 +27,20 @@ func (s *URLShortenerService) generateShortID() string {
 	for i := range id {
 		id[i] = chars[rand.Intn(len(chars))]
 	}
+
+	if _, ok := s.r.GetOriginalURL(string(id)); ok {
+		s.generateShortID()
+	}
+
 	return string(id)
 }
 
-func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
+func (s *URLShortenerService) Shorten(originalURL string) string {
 	if shortURL, ok := s.r.GetShortURL(originalURL); ok {
-		return shortURL, nil
+		return shortURL
 	}
 
-	return s.r.StorageURL(originalURL, s.generateShortID()), nil
+	return s.r.StorageURL(originalURL, s.generateShortID())
 }
 
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {

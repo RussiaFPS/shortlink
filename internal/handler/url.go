@@ -39,21 +39,17 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	originalURL := strings.TrimSpace(string(body))
 	if _, err = url.ParseRequestURI(originalURL); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	shortURL, err := h.s.Shorten(originalURL)
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
+	shortURL := h.s.Shorten(originalURL)
 
 	c.Header("Content-Type", "text/plain")
 	c.String(http.StatusCreated, shortURL)
