@@ -9,12 +9,7 @@ import (
 )
 
 func TestGetShortURL(t *testing.T) {
-	cfg, err := config.NewConfig()
-	if err != nil {
-		t.Errorf("Failed to create config: %v", err)
-		return
-	}
-
+	cfg := config.NewConfig()
 	h := NewURLShortenerHandler(cfg)
 
 	tests := []struct {
@@ -70,11 +65,7 @@ func TestGetShortURL(t *testing.T) {
 }
 
 func TestGetOriginURL(t *testing.T) {
-	cfg, err := config.NewConfig()
-	if err != nil {
-		t.Errorf("Failed to create config: %v", err)
-		return
-	}
+	cfg := config.NewConfig()
 
 	h := NewURLShortenerHandler(cfg)
 	originalURL := "https://practicum.yandex.ru/"

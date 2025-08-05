@@ -2,8 +2,7 @@ package config
 
 import (
 	"flag"
-	"fmt"
-	"os"
+	"sync"
 )
 
 type Config struct {
@@ -11,15 +10,18 @@ type Config struct {
 	BaseURL    string
 }
 
-func NewConfig() (*Config, error) {
-	cfg := &Config{}
-	fs := flag.NewFlagSet("config", flag.ContinueOnError)
+var (
+	cfg  *Config
+	once sync.Once
+)
 
-	fs.StringVar(&cfg.ServerAddr, "a", "localhost:8080", "HTTP server address")
-	fs.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "Base URL for shortened links")
+func NewConfig() *Config {
+	once.Do(func() {
+		cfg = &Config{}
+		flag.StringVar(&cfg.ServerAddr, "a", "localhost:8080", "HTTP server address")
+		flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "Base URL for shortened links")
+		flag.Parse()
+	})
 
-	if err := fs.Parse(os.Args); err != nil {
-		return nil, fmt.Errorf("failed to parse flags: %w", err)
-	}
-	return cfg, nil
+	return cfg
 }

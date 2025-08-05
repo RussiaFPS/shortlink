@@ -8,10 +8,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.NewConfig()
-	if err != nil {
-		log.Fatalf("failed to build config: %v", err)
-	}
+	cfg := config.NewConfig()
 
 	h := handler.NewURLShortenerHandler(cfg)
 
