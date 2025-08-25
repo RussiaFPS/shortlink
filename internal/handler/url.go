@@ -55,12 +55,12 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 		return
 	}
 
-	if _, err = url.ParseRequestURI(req.Url); err != nil {
+	if _, err = url.ParseRequestURI(req.URL); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp.Result = h.s.Shorten(req.Url)
+	resp.Result = h.s.Shorten(req.URL)
 	c.JSON(http.StatusCreated, resp)
 }
 

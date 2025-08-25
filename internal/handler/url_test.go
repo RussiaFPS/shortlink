@@ -24,25 +24,25 @@ func TestGetAPIShortURL(t *testing.T) {
 		{
 			name:           "Valid POST request",
 			method:         http.MethodPost,
-			body:           model.RequestGetAPIShortURL{Url: "https://practicum.yandex.ru"},
+			body:           model.RequestGetAPIShortURL{URL: "https://practicum.yandex.ru"},
 			expectedStatus: http.StatusCreated,
 		},
 		{
 			name:           "Invalid method (GET)",
 			method:         http.MethodGet,
-			body:           model.RequestGetAPIShortURL{Url: "https://practicum.yandex.ru"},
+			body:           model.RequestGetAPIShortURL{URL: "https://practicum.yandex.ru"},
 			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:           "Empty URL",
 			method:         http.MethodPost,
-			body:           model.RequestGetAPIShortURL{Url: ""},
+			body:           model.RequestGetAPIShortURL{URL: ""},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Invalid URL",
 			method:         http.MethodPost,
-			body:           model.RequestGetAPIShortURL{Url: "not-a-valid-url"},
+			body:           model.RequestGetAPIShortURL{URL: "not-a-valid-url"},
 			expectedStatus: http.StatusBadRequest,
 		},
 	}
