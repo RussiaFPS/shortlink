@@ -1,12 +1,82 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/RussiaFPS/shortlink/internal/config"
+	"github.com/RussiaFPS/shortlink/internal/model"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+func TestGetAPIShortURL(t *testing.T) {
+	cfg := config.NewConfig()
+	h := NewURLShortenerHandler(cfg)
+
+	tests := []struct {
+		name           string
+		method         string
+		body           model.RequestGetAPIShortURL
+		expectedStatus int
+	}{
+		{
+			name:           "Valid POST request",
+			method:         http.MethodPost,
+			body:           model.RequestGetAPIShortURL{Url: "https://practicum.yandex.ru"},
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "Invalid method (GET)",
+			method:         http.MethodGet,
+			body:           model.RequestGetAPIShortURL{Url: "https://practicum.yandex.ru"},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "Empty URL",
+			method:         http.MethodPost,
+			body:           model.RequestGetAPIShortURL{Url: ""},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Invalid URL",
+			method:         http.MethodPost,
+			body:           model.RequestGetAPIShortURL{Url: "not-a-valid-url"},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := model.ResponseGetAPIShortURL{}
+
+			jsonBody, err := json.Marshal(tt.body)
+			if err != nil {
+				t.Fatalf("failed marshaled body: %v", err)
+			}
+
+			req := httptest.NewRequest(tt.method, "/api/shorten", bytes.NewReader(jsonBody))
+
+			rr := httptest.NewRecorder()
+			h.ServeHTTP(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, rr.Code)
+			}
+
+			if tt.expectedStatus == http.StatusCreated {
+				if err = json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Fatalf("failed unmarshaled body: %v", err)
+				}
+
+				if !strings.HasPrefix(resp.Result, cfg.BaseURL) {
+					t.Errorf("expected shortened URL, got %s", rr.Body.String())
+				}
+			}
+		})
+	}
+}
 
 func TestGetShortURL(t *testing.T) {
 	cfg := config.NewConfig()
