@@ -28,7 +28,7 @@ func NewURLShortenerHandler(cfg *config.Config) *URLShortenerHandler {
 		cfg: cfg,
 	}
 
-	h.mux.Use(logger.ReqLogger())
+	h.mux.Use(logger.ReqLogger()).Use(GzipMiddleware())
 	h.mux.POST("/api/shorten", h.GetAPIShortURL)
 	h.mux.POST("/", h.GetShortURL)
 	h.mux.GET("/:id", h.GetOriginURL)
