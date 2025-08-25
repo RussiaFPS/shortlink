@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/RussiaFPS/shortlink/internal/config"
+	"github.com/RussiaFPS/shortlink/internal/logger"
 	"github.com/RussiaFPS/shortlink/internal/service"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -25,6 +26,7 @@ func NewURLShortenerHandler(cfg *config.Config) *URLShortenerHandler {
 		cfg: cfg,
 	}
 
+	h.mux.Use(logger.ReqLogger())
 	h.mux.POST("/", h.GetShortURL)
 	h.mux.GET("/:id", h.GetOriginURL)
 
