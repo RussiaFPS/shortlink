@@ -3,14 +3,13 @@ package config
 import (
 	"flag"
 	"github.com/caarlos0/env/v11"
-	"log"
 	"sync"
 )
 
 type Config struct {
-	ServerAddr      string `env:"SERVER_ADDRESS"`
-	BaseURL         string `env:"BASE_URL"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	ServerAddr      string `env:"SERVER_ADDRESS,required"`
+	BaseURL         string `env:"BASE_URL,required"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH,required"`
 }
 
 var (
@@ -22,8 +21,8 @@ func NewConfig() *Config {
 	once.Do(func() {
 		cfg = &Config{}
 
-		if err := env.Parse(cfg); err != nil {
-			log.Fatal("parse config error:", err)
+		if err := env.Parse(cfg); err == nil {
+			return
 		}
 
 		if cfg.ServerAddr == "" {
