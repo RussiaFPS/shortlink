@@ -26,7 +26,7 @@ func NewConfig() *Config {
 		}
 
 		if cfg.FileStoragePath == "" {
-			flag.StringVar(&cfg.FileStoragePath, "f", "storage.json", "File storage path")
+			flag.StringVar(&cfg.FileStoragePath, "f", "URL.json", "File storage path")
 		}
 		if cfg.ServerAddr == "" {
 			flag.StringVar(&cfg.ServerAddr, "a", "localhost:8080", "HTTP server address")
