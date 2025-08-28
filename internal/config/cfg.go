@@ -22,21 +22,18 @@ func NewConfig() *Config {
 	once.Do(func() {
 		cfg = &Config{}
 
-		if err := env.Parse(cfg); err != nil {
-			log.Fatal(err)
-		}
-
-		if cfg.FileStoragePath == "" {
-			flag.StringVar(&cfg.FileStoragePath, "f", "URL.json", "File storage path")
-		}
-		if cfg.ServerAddr == "" {
-			flag.StringVar(&cfg.ServerAddr, "a", "localhost:8080", "HTTP server address")
-		}
-		if cfg.BaseURL == "" {
-			flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "Base URL for shortened links")
-		}
+		flag.StringVar(&cfg.ServerAddr, "a", "localhost:8080", "HTTP server address")
+		flag.StringVar(&cfg.FileStoragePath, "f", "URL.json", "File storage path")
+		flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "Base URL for shortened links")
 
 		flag.Parse()
+
+		err := env.Parse(&cfg)
+		if err != nil {
+			log.Printf("failed to load envs: %s", err.Error())
+		}
+
+		log.Printf("CFG: %v\n", &cfg)
 	})
 
 	return cfg
