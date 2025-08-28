@@ -56,9 +56,9 @@ func (r *URLShortenerRepository) StorageURL(originalURL string, shortID string) 
 	defer r.mu.Unlock()
 
 	s := model.URLStorage{
-		Uuid:        shortID,
-		ShortUrl:    shortID,
-		OriginalUrl: originalURL,
+		UUID:        shortID,
+		ShortURL:    shortID,
+		OriginalURL: originalURL,
 	}
 	r.records = append(r.records, s)
 
@@ -105,8 +105,8 @@ func (r *URLShortenerRepository) loadFromFile() error {
 	}
 
 	for _, record := range r.records {
-		r.urls[record.ShortUrl] = record.OriginalUrl
-		r.urlToShort[record.OriginalUrl] = record.ShortUrl
+		r.urls[record.ShortURL] = record.OriginalURL
+		r.urlToShort[record.OriginalURL] = record.ShortURL
 	}
 
 	log.Printf("Loaded %d URLs from storage file", len(r.records))
