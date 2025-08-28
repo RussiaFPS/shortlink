@@ -60,7 +60,7 @@ func (r *URLShortenerRepository) StorageURL(originalURL string, shortID string) 
 		return "", fmt.Errorf("error marshaling JSON: %v", err)
 	}
 
-	if err = os.WriteFile(r.cfg.FileStoragePath, newData, 0666); err != nil {
+	if err = os.WriteFile("123", newData, 0666); err != nil {
 		return "", fmt.Errorf("error writing file: %v", err)
 	}
 
@@ -84,13 +84,13 @@ func (r *URLShortenerRepository) loadFromFile() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	file, err := os.OpenFile(r.cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile("123", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("failed to open storage file: %v", err)
 	}
 	defer file.Close()
 
-	data, err := os.ReadFile(r.cfg.FileStoragePath)
+	data, err := os.ReadFile("123")
 	if err != nil {
 		return err
 	}
