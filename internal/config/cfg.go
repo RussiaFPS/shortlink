@@ -8,8 +8,8 @@ import (
 )
 
 type Config struct {
-	ServerAddr      string `env:"SERVER_ADDRESS"`
-	BaseURL         string `env:"BASE_URL"`
+	ServerAddr      string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
+	BaseURL         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
@@ -28,12 +28,12 @@ func NewConfig() *Config {
 
 		flag.Parse()
 
-		err := env.Parse(&cfg)
+		err := env.Parse(cfg)
 		if err != nil {
 			log.Printf("failed to load envs: %s", err.Error())
 		}
 
-		log.Printf("CFG: %v\n", &cfg)
+		log.Printf("CFG: %v\n", cfg)
 	})
 
 	return cfg
