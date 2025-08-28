@@ -35,12 +35,17 @@ func (s *URLShortenerService) generateShortID() string {
 	return string(id)
 }
 
-func (s *URLShortenerService) Shorten(originalURL string) string {
+func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
 	if shortURL, ok := s.r.GetShortURL(originalURL); ok {
-		return shortURL
+		return shortURL, nil
 	}
 
-	return s.r.StorageURL(originalURL, s.generateShortID())
+	URL, err := s.r.StorageURL(originalURL, s.generateShortID())
+	if err != nil {
+		return "", err
+	}
+
+	return URL, nil
 }
 
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {
