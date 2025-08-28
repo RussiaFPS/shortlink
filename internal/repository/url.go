@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
@@ -91,7 +90,7 @@ func (r *URLShortenerRepository) loadFromFile() error {
 	}
 	defer file.Close()
 
-	data, err := bufio.NewReader(file).ReadBytes('\n')
+	data, err := os.ReadFile(r.cfg.FileStoragePath)
 	if err != nil {
 		return err
 	}
