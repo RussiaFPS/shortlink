@@ -23,16 +23,17 @@ func (g *GzipWriter) initGzip() {
 }
 
 func (g *GzipWriter) Write(data []byte) (int, error) {
-	contentType := g.Header().Get("Content-Type")
-	shouldCompress := strings.Contains(contentType, "application/json") ||
-		strings.Contains(contentType, "text/html")
-
-	if !shouldCompress {
+	if !g.checkContentType(g.Header().Get("Content-Type")) {
 		return g.ResponseWriter.Write(data)
 	}
 
 	g.initGzip()
 	return g.writer.Write(data)
+}
+
+func (g *GzipWriter) checkContentType(contentType string) bool {
+	return strings.Contains(contentType, "application/json") ||
+		strings.Contains(contentType, "text/html")
 }
 
 func (g *GzipWriter) WriteString(s string) (int, error) {
@@ -46,11 +47,7 @@ func (g *GzipWriter) Close() {
 }
 
 func (g *GzipWriter) WriteHeader(code int) {
-	contentType := g.Header().Get("Content-Type")
-	shouldCompress := strings.Contains(contentType, "application/json") ||
-		strings.Contains(contentType, "text/html")
-
-	if shouldCompress {
+	if g.checkContentType(g.Header().Get("Content-Type")) {
 		g.initGzip()
 	}
 	g.ResponseWriter.WriteHeader(code)

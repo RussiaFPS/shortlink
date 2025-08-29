@@ -3,7 +3,6 @@ package config
 import (
 	"flag"
 	"os"
-	"sync"
 	"testing"
 )
 
@@ -61,10 +60,7 @@ func TestNewConfig(t *testing.T) {
 				}
 			}()
 
-			cfg = nil
-			once = sync.Once{}
 			os.Args = []string{"test"}
-
 			config := NewConfig()
 
 			if config.ServerAddr != tt.expectedAddr {

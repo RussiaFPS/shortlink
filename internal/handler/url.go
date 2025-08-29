@@ -15,13 +15,20 @@ import (
 
 const lenShortURL = 8
 
+type IURLShortenerHandler interface {
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	GetAPIShortURL(c *gin.Context)
+	GetShortURL(c *gin.Context)
+	GetOriginURL(c *gin.Context)
+}
+
 type URLShortenerHandler struct {
-	mux *gin.Engine
-	s   *service.URLShortenerService
+	mux gin.IRouter
+	s   service.IURLShortenerService
 	cfg *config.Config
 }
 
-func NewURLShortenerHandler(cfg *config.Config) *URLShortenerHandler {
+func NewURLShortenerHandler(cfg *config.Config) IURLShortenerHandler {
 	h := &URLShortenerHandler{
 		mux: gin.Default(),
 		s:   service.NewURLShortener(cfg, lenShortURL),
@@ -37,7 +44,11 @@ func NewURLShortenerHandler(cfg *config.Config) *URLShortenerHandler {
 }
 
 func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.mux.ServeHTTP(w, r)
+	if handler, ok := h.mux.(http.Handler); ok {
+		handler.ServeHTTP(w, r)
+	} else {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
 }
 
 func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {

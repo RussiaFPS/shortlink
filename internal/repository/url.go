@@ -6,9 +6,15 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"log"
-	"os"
 	"sync"
 )
+
+type IURLShortenerRepository interface {
+	GetShortURL(originalURL string) (string, bool)
+	StorageURL(originalURL string, shortID string) (string, error)
+	GetOriginalURL(shortID string) (string, bool)
+	loadRecords() error
+}
 
 type URLShortenerRepository struct {
 	cfg        *config.Config
@@ -16,18 +22,20 @@ type URLShortenerRepository struct {
 	urls       map[string]string // {shortID: originalURL}
 	urlToShort map[string]string // {originalURL: shortID}
 	records    []model.URLStorage
+	storage    IStorage
 }
 
-func NewURLShortenerRepository(cfg *config.Config) *URLShortenerRepository {
+func NewURLShortenerRepository(cfg *config.Config) IURLShortenerRepository {
 	s := &URLShortenerRepository{
 		urls:       make(map[string]string),
 		urlToShort: make(map[string]string),
 		records:    make([]model.URLStorage, 0),
 		cfg:        cfg,
+		storage:    NewFileStorage(cfg),
 	}
 
-	if err := s.loadFromFile(); err != nil {
-		log.Fatalf("failed to load data from file: %v", err)
+	if err := s.loadRecords(); err != nil {
+		log.Fatalf("failed to load records: %v", err)
 	}
 
 	return s
@@ -55,13 +63,13 @@ func (r *URLShortenerRepository) StorageURL(originalURL string, shortID string) 
 	}
 	r.records = append(r.records, s)
 
-	newData, err := json.MarshalIndent(r.records, "", "  ")
+	newData, err := json.Marshal(r.records)
 	if err != nil {
-		return "", fmt.Errorf("error marshaling JSON: %v", err)
+		return "", fmt.Errorf("failed to marshal data: %v", err)
 	}
 
-	if err = os.WriteFile(r.cfg.FileStoragePath, newData, 0666); err != nil {
-		return "", fmt.Errorf("error writing file: %v", err)
+	if err = r.storage.SaveDataToFile(newData); err != nil {
+		return "", fmt.Errorf("failed to save data to file: %v", err)
 	}
 
 	r.urls[shortID] = originalURL
@@ -80,27 +88,19 @@ func (r *URLShortenerRepository) GetOriginalURL(shortID string) (string, bool) {
 	return "", false
 }
 
-func (r *URLShortenerRepository) loadFromFile() error {
+func (r *URLShortenerRepository) loadRecords() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	file, err := os.OpenFile(r.cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	data, err := r.storage.GetDataFromFile()
 	if err != nil {
-		return fmt.Errorf("failed to open storage file: %v", err)
-	}
-	defer file.Close()
-
-	data, err := os.ReadFile(r.cfg.FileStoragePath)
-	if err != nil {
-		return err
+		return fmt.Errorf("failed to load data from file: %v", err)
 	}
 
-	if len(data) == 0 {
-		return nil
-	}
-
-	if err = json.Unmarshal(data, &r.records); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON: %w", err)
+	if len(data) != 0 {
+		if err = json.Unmarshal(data, &r.records); err != nil {
+			return fmt.Errorf("failed to unmarshal JSON: %w", err)
+		}
 	}
 
 	for _, record := range r.records {

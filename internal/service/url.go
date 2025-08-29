@@ -8,13 +8,20 @@ import (
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+type IURLShortenerService interface {
+	Shorten(originalURL string) (string, error)
+	GetOriginal(shortURL string) (string, bool)
+	randShortID() string
+	generateShortID() string
+}
+
 type URLShortenerService struct {
 	cfg      *config.Config
 	shortLen int
-	r        *repository.URLShortenerRepository
+	r        repository.IURLShortenerRepository
 }
 
-func NewURLShortener(cfg *config.Config, shortLen int) *URLShortenerService {
+func NewURLShortener(cfg *config.Config, shortLen int) IURLShortenerService {
 	return &URLShortenerService{
 		shortLen: shortLen,
 		cfg:      cfg,
@@ -23,13 +30,20 @@ func NewURLShortener(cfg *config.Config, shortLen int) *URLShortenerService {
 }
 
 func (s *URLShortenerService) generateShortID() string {
+	var id string
+	for {
+		id = s.randShortID()
+		if _, exists := s.r.GetOriginalURL(id); !exists {
+			break
+		}
+	}
+	return id
+}
+
+func (s *URLShortenerService) randShortID() string {
 	id := make([]byte, s.shortLen)
 	for i := range id {
 		id[i] = chars[rand.Intn(len(chars))]
-	}
-
-	if _, ok := s.r.GetOriginalURL(string(id)); ok {
-		s.generateShortID()
 	}
 
 	return string(id)
