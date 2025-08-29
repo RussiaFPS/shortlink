@@ -10,7 +10,7 @@ import (
 type Config struct {
 	ServerAddr      string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
 	BaseURL         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"URL.json"`
 }
 
 var (
@@ -22,16 +22,14 @@ func NewConfig() *Config {
 	once.Do(func() {
 		cfg = &Config{}
 
-		flag.StringVar(&cfg.ServerAddr, "a", "localhost:8080", "HTTP server address")
-		flag.StringVar(&cfg.FileStoragePath, "f", "URL.json", "File storage path")
-		flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "Base URL for shortened links")
-
-		flag.Parse()
-
-		err := env.Parse(cfg)
-		if err != nil {
+		if err := env.Parse(cfg); err != nil {
 			log.Printf("failed to load envs: %s", err.Error())
 		}
+
+		flag.StringVar(&cfg.ServerAddr, "a", cfg.ServerAddr, "HTTP server address")
+		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "File storage path")
+		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL for shortened links")
+		flag.Parse()
 
 		log.Printf("CFG: %v\n", cfg)
 	})
