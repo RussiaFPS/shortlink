@@ -3,18 +3,17 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
 
 func TestGetAPIShortURL(t *testing.T) {
-	cfg := config.NewConfig()
-	h := NewURLShortenerHandler(cfg)
-
 	tests := []struct {
 		name           string
 		method         string
@@ -49,6 +48,16 @@ func TestGetAPIShortURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			originalFlags := flag.CommandLine
+			flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+			defer func() {
+				flag.CommandLine = originalFlags
+			}()
+			os.Args = []string{"test"}
+
+			cfg := config.NewConfig()
+			h := NewURLShortenerHandler(cfg)
+
 			resp := model.ResponseGetAPIShortURL{}
 
 			jsonBody, err := json.Marshal(tt.body)
@@ -79,9 +88,6 @@ func TestGetAPIShortURL(t *testing.T) {
 }
 
 func TestGetShortURL(t *testing.T) {
-	cfg := config.NewConfig()
-	h := NewURLShortenerHandler(cfg)
-
 	tests := []struct {
 		name           string
 		method         string
@@ -116,6 +122,16 @@ func TestGetShortURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			originalFlags := flag.CommandLine
+			flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+			defer func() {
+				flag.CommandLine = originalFlags
+			}()
+			os.Args = []string{"test"}
+
+			cfg := config.NewConfig()
+			h := NewURLShortenerHandler(cfg)
+
 			req := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 
 			rr := httptest.NewRecorder()
@@ -135,8 +151,14 @@ func TestGetShortURL(t *testing.T) {
 }
 
 func TestGetOriginURL(t *testing.T) {
-	cfg := config.NewConfig()
+	originalFlags := flag.CommandLine
+	flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+	defer func() {
+		flag.CommandLine = originalFlags
+	}()
+	os.Args = []string{"test"}
 
+	cfg := config.NewConfig()
 	h := NewURLShortenerHandler(cfg)
 	originalURL := "https://practicum.yandex.ru/"
 

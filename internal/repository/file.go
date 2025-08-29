@@ -36,7 +36,7 @@ func (f *FileStorage) SaveDataToFile(data []byte) error {
 	}
 	defer file.Close()
 
-	if _, err = file.Write(append(data, '\n')); err != nil {
+	if err = os.WriteFile(f.cfg.FileStoragePath, data, 0666); err != nil {
 		return fmt.Errorf("error writing file: %v", err)
 	}
 

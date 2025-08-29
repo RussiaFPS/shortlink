@@ -61,9 +61,9 @@ func (r *URLShortenerRepository) StorageURL(originalURL string, shortID string) 
 		ShortURL:    shortID,
 		OriginalURL: originalURL,
 	}
-	r.records = append(r.records, s)
 
-	newData, err := json.Marshal(r.records)
+	r.records = append(r.records, s)
+	newData, err := json.MarshalIndent(r.records, "", "   ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal data: %v", err)
 	}
