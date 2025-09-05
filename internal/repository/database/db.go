@@ -20,14 +20,24 @@ type DBStorage struct {
 func New(cfg *config.Config) (*DBStorage, error) {
 	dbConn, err := postgres.NewPostgres(context.Background(), cfg.DSN)
 	if err != nil {
-		log.Printf("failed to initialize dbConn: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize dbConn: %v", err)
+	}
+
+	if err = initTable(dbConn); err != nil {
+		return nil, fmt.Errorf("failed to create table: %v", err)
 	}
 
 	return &DBStorage{
 		config:  cfg,
 		pgxPool: dbConn,
 	}, nil
+}
+
+func initTable(db *pgxpool.Pool) error {
+	if _, err := db.Exec(context.Background(), createTable); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (db *DBStorage) Ping() error {
