@@ -10,7 +10,7 @@ type Config struct {
 	ServerAddr      string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
 	BaseURL         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"URL.json"`
-	DSN             string `env:"DATABASE_DSN"`
+	DSN             string `env:"DATABASE_DSN" envDefault:"postgres://postgres:qwer1234@localhost:5432/shortlink"`
 }
 
 func NewConfig() *Config {
