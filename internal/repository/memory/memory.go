@@ -27,8 +27,10 @@ func New(cfg *config.Config) (*MemStorage, error) {
 		storage:    NewFileStorage(cfg),
 	}
 
-	if err := s.loadRecords(); err != nil {
-		return nil, fmt.Errorf("failed to load records: %v", err)
+	if cfg.FileStoragePath != "" {
+		if err := s.loadRecords(); err != nil {
+			return nil, fmt.Errorf("failed to load records: %v", err)
+		}
 	}
 	return s, nil
 }
@@ -79,13 +81,15 @@ func (m *MemStorage) StorageURL(originalURL string, shortID string) (string, err
 	}
 
 	m.records = append(m.records, s)
-	newData, err := json.MarshalIndent(m.records, "", "   ")
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal data: %v", err)
-	}
+	if m.cfg.FileStoragePath != "" {
+		newData, err := json.MarshalIndent(m.records, "", "   ")
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal data: %v", err)
+		}
 
-	if err = m.storage.SaveDataToFile(newData); err != nil {
-		return "", fmt.Errorf("failed to save data to file: %v", err)
+		if err = m.storage.SaveDataToFile(newData); err != nil {
+			return "", fmt.Errorf("failed to save data to file: %v", err)
+		}
 	}
 
 	m.urls[shortID] = originalURL
