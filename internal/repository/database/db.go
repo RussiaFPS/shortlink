@@ -39,6 +39,9 @@ func (db *DbStorage) Ping() error {
 
 func (db *DbStorage) GetShortURL(originalURL string) (string, bool) {
 	var ur string
+
+	log.Printf("DbStorage:GetShortURL with originalURL: %s", originalURL)
+
 	err := db.pgxPool.QueryRow(context.Background(), findShortURL, originalURL).Scan(&ur)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		return "", false
@@ -50,6 +53,8 @@ func (db *DbStorage) GetShortURL(originalURL string) (string, bool) {
 }
 
 func (db *DbStorage) StorageURL(originalURL string, shortID string) (string, error) {
+	log.Printf("DbStorage:StorageURL with originalURL: %s,shortID: %s", originalURL, shortID)
+
 	_, err := db.pgxPool.Exec(context.Background(), addURL, shortID, originalURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to add short url to db: %v", err)
@@ -59,6 +64,9 @@ func (db *DbStorage) StorageURL(originalURL string, shortID string) (string, err
 
 func (db *DbStorage) GetOriginalURL(shortID string) (string, bool) {
 	var ur string
+
+	log.Printf("DbStorage:GetOriginalURL with shortID: %s", shortID)
+
 	err := db.pgxPool.QueryRow(context.Background(), findLongURL, shortID).Scan(&ur)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		return "", false

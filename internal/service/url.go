@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/repository"
+	"log"
 	"math/rand"
 )
 
@@ -55,6 +56,8 @@ func (s *URLShortenerService) randShortID() string {
 }
 
 func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
+	log.Printf("URLShortenerService:Shorten with originalURL: %s", originalURL)
+
 	if shortURL, ok := s.r.GetShortURL(originalURL); ok {
 		return shortURL, nil
 	}
@@ -68,5 +71,6 @@ func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
 }
 
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {
+	log.Printf("URLShortenerService:GetOriginal with shortID: %s", shortID)
 	return s.r.GetOriginalURL(shortID)
 }
