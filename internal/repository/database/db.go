@@ -12,35 +12,35 @@ import (
 	"time"
 )
 
-type DbStorage struct {
+type DBStorage struct {
 	config  *config.Config
 	pgxPool *pgxpool.Pool
 }
 
-func New(cfg *config.Config) (*DbStorage, error) {
+func New(cfg *config.Config) (*DBStorage, error) {
 	dbConn, err := postgres.NewPostgres(context.Background(), cfg.DSN)
 	if err != nil {
 		log.Printf("failed to initialize dbConn: %v", err)
 		return nil, err
 	}
 
-	return &DbStorage{
+	return &DBStorage{
 		config:  cfg,
 		pgxPool: dbConn,
 	}, nil
 }
 
-func (db *DbStorage) Ping() error {
+func (db *DBStorage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	return db.pgxPool.Ping(ctx)
 }
 
-func (db *DbStorage) GetShortURL(originalURL string) (string, bool) {
+func (db *DBStorage) GetShortURL(originalURL string) (string, bool) {
 	var ur string
 
-	log.Printf("DbStorage:GetShortURL with originalURL: %s", originalURL)
+	log.Printf("DBStorage:GetShortURL with originalURL: %s", originalURL)
 
 	err := db.pgxPool.QueryRow(context.Background(), findShortURL, originalURL).Scan(&ur)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
@@ -52,8 +52,8 @@ func (db *DbStorage) GetShortURL(originalURL string) (string, bool) {
 	return fmt.Sprintf("%s/%s", db.config.BaseURL, ur), true
 }
 
-func (db *DbStorage) StorageURL(originalURL string, shortID string) (string, error) {
-	log.Printf("DbStorage:StorageURL with originalURL: %s,shortID: %s", originalURL, shortID)
+func (db *DBStorage) StorageURL(originalURL string, shortID string) (string, error) {
+	log.Printf("DBStorage:StorageURL with originalURL: %s,shortID: %s", originalURL, shortID)
 
 	_, err := db.pgxPool.Exec(context.Background(), addURL, shortID, originalURL)
 	if err != nil {
@@ -62,10 +62,10 @@ func (db *DbStorage) StorageURL(originalURL string, shortID string) (string, err
 	return fmt.Sprintf("%s/%s", db.config.BaseURL, shortID), nil
 }
 
-func (db *DbStorage) GetOriginalURL(shortID string) (string, bool) {
+func (db *DBStorage) GetOriginalURL(shortID string) (string, bool) {
 	var ur string
 
-	log.Printf("DbStorage:GetOriginalURL with shortID: %s", shortID)
+	log.Printf("DBStorage:GetOriginalURL with shortID: %s", shortID)
 
 	err := db.pgxPool.QueryRow(context.Background(), findLongURL, shortID).Scan(&ur)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
