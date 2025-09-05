@@ -20,6 +20,7 @@ type IURLShortenerHandler interface {
 	GetAPIShortURL(c *gin.Context)
 	GetShortURL(c *gin.Context)
 	GetOriginURL(c *gin.Context)
+	PingDB(c *gin.Context)
 }
 
 type URLShortenerHandler struct {
@@ -39,6 +40,7 @@ func NewURLShortenerHandler(cfg *config.Config) IURLShortenerHandler {
 	h.mux.POST("/api/shorten", h.GetAPIShortURL)
 	h.mux.POST("/", h.GetShortURL)
 	h.mux.GET("/:id", h.GetOriginURL)
+	h.mux.GET("/ping", h.PingDB)
 
 	return h
 }
@@ -49,6 +51,14 @@ func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	} else {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
+}
+
+func (h *URLShortenerHandler) PingDB(c *gin.Context) {
+	if err := h.s.PingDB(); err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusOK)
 }
 
 func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {

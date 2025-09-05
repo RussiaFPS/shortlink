@@ -1,23 +1,29 @@
 package repository
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
+	"github.com/RussiaFPS/shortlink/internal/config/db/postgres"
 	"github.com/RussiaFPS/shortlink/internal/model"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"sync"
+	"time"
 )
 
 type IURLShortenerRepository interface {
 	GetShortURL(originalURL string) (string, bool)
 	StorageURL(originalURL string, shortID string) (string, error)
 	GetOriginalURL(shortID string) (string, bool)
+	PingDB() error
 	loadRecords() error
 }
 
 type URLShortenerRepository struct {
 	cfg        *config.Config
+	db         *pgxpool.Pool
 	mu         sync.RWMutex
 	urls       map[string]string // {shortID: originalURL}
 	urlToShort map[string]string // {originalURL: shortID}
@@ -34,11 +40,24 @@ func NewURLShortenerRepository(cfg *config.Config) IURLShortenerRepository {
 		storage:    NewFileStorage(cfg),
 	}
 
-	if err := s.loadRecords(); err != nil {
+	dbConn, err := postgres.NewPostgres(context.Background(), cfg.DSN)
+	if err != nil {
+		log.Fatalf("failed to initialize dbConn: %v", err)
+	}
+	s.db = dbConn
+
+	if err = s.loadRecords(); err != nil {
 		log.Fatalf("failed to load records: %v", err)
 	}
 
 	return s
+}
+
+func (r *URLShortenerRepository) PingDB() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+
+	return r.db.Ping(ctx)
 }
 
 func (r *URLShortenerRepository) GetShortURL(originalURL string) (string, bool) {

@@ -11,6 +11,7 @@ const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 type IURLShortenerService interface {
 	Shorten(originalURL string) (string, error)
 	GetOriginal(shortURL string) (string, bool)
+	PingDB() error
 	randShortID() string
 	generateShortID() string
 }
@@ -27,6 +28,10 @@ func NewURLShortener(cfg *config.Config, shortLen int) IURLShortenerService {
 		cfg:      cfg,
 		r:        repository.NewURLShortenerRepository(cfg),
 	}
+}
+
+func (s *URLShortenerService) PingDB() error {
+	return s.r.PingDB()
 }
 
 func (s *URLShortenerService) generateShortID() string {
