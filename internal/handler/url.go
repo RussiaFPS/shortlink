@@ -55,7 +55,7 @@ func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 func (h *URLShortenerHandler) PingDB(c *gin.Context) {
 	if err := h.s.PingDB(); err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.Status(http.StatusInternalServerError)
 		return
 	}
 	c.Status(http.StatusOK)
@@ -67,23 +67,23 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err = json.Unmarshal(body, &req); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if _, err = url.ParseRequestURI(req.URL); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	result, err := h.s.Shorten(req.URL)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -95,19 +95,19 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	originalURL := strings.TrimSpace(string(body))
 	if _, err = url.ParseRequestURI(originalURL); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	shortURL, err := h.s.Shorten(originalURL)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -120,7 +120,7 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 
 	originalURL, exists := h.s.GetOriginal(id)
 	if !exists {
-		c.AbortWithStatus(http.StatusNotFound)
+		c.Status(http.StatusNotFound)
 		return
 	}
 
