@@ -10,5 +10,14 @@ func NewPostgres(ctx context.Context, dataSourceName string) (*pgxpool.Pool, err
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	return pgxpool.New(ctx, dataSourceName)
+	pool, err := pgxpool.New(ctx, dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = pool.Ping(ctx); err != nil {
+		return nil, err
+	}
+
+	return pool, nil
 }

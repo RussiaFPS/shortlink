@@ -3,10 +3,12 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/config/db/postgres"
 	"github.com/RussiaFPS/shortlink/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"sync"
@@ -42,9 +44,12 @@ func NewURLShortenerRepository(cfg *config.Config) IURLShortenerRepository {
 
 	dbConn, err := postgres.NewPostgres(context.Background(), cfg.DSN)
 	if err != nil {
-		log.Fatalf("failed to initialize dbConn: %v", err)
+		log.Printf("failed to initialize dbConn: %v", err)
+		s.db = nil
+	} else {
+		log.Println("success initialize dbConn")
+		s.db = dbConn
 	}
-	s.db = dbConn
 
 	if err = s.loadRecords(); err != nil {
 		log.Fatalf("failed to load records: %v", err)
@@ -64,6 +69,18 @@ func (r *URLShortenerRepository) GetShortURL(originalURL string) (string, bool) 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	if r.db != nil {
+		var ur string
+		err := r.db.QueryRow(context.Background(), findShortURL, originalURL).Scan(&ur)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			return "", false
+		}
+		if err != nil {
+			log.Fatalf("failed to fetch short url: %v", err)
+		}
+		return fmt.Sprintf("%s/%s", r.cfg.BaseURL, ur), true
+	}
+
 	if v, ok := r.urlToShort[originalURL]; ok {
 		return fmt.Sprintf("%s/%s", r.cfg.BaseURL, v), true
 	}
@@ -74,6 +91,14 @@ func (r *URLShortenerRepository) GetShortURL(originalURL string) (string, bool) 
 func (r *URLShortenerRepository) StorageURL(originalURL string, shortID string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	if r.db != nil {
+		_, err := r.db.Exec(context.Background(), addURL, shortID, originalURL)
+		if err != nil {
+			return "", fmt.Errorf("failed to add short url to db: %v", err)
+		}
+		return fmt.Sprintf("%s/%s", r.cfg.BaseURL, shortID), nil
+	}
 
 	s := model.URLStorage{
 		UUID:        shortID,
@@ -100,6 +125,18 @@ func (r *URLShortenerRepository) StorageURL(originalURL string, shortID string) 
 func (r *URLShortenerRepository) GetOriginalURL(shortID string) (string, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
+	if r.db != nil {
+		var ur string
+		err := r.db.QueryRow(context.Background(), findLongURL, shortID).Scan(&ur)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			return "", false
+		}
+		if err != nil {
+			log.Fatalf("failed to fetch long url: %v", err)
+		}
+		return ur, true
+	}
 
 	if v, ok := r.urls[shortID]; ok {
 		return v, true
