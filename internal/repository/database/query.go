@@ -1,4 +1,4 @@
-package repository
+package database
 
 const addURL = `
 		INSERT INTO urls (short_url, long_url)

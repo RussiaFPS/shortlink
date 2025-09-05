@@ -26,12 +26,12 @@ func NewURLShortener(cfg *config.Config, shortLen int) IURLShortenerService {
 	return &URLShortenerService{
 		shortLen: shortLen,
 		cfg:      cfg,
-		r:        repository.NewURLShortenerRepository(cfg),
+		r:        repository.New(cfg),
 	}
 }
 
 func (s *URLShortenerService) PingDB() error {
-	return s.r.PingDB()
+	return s.r.Ping()
 }
 
 func (s *URLShortenerService) generateShortID() string {
