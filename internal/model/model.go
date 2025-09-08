@@ -13,3 +13,13 @@ type URLStorage struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
+
+type MultiReq struct {
+	CorrID string `json:"correlation_id"`
+	URL    string `json:"original_url"`
+}
+
+type MultiResp struct {
+	CorrID   string `json:"correlation_id"`
+	ShortURL string `json:"short_url"`
+}

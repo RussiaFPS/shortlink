@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/RussiaFPS/shortlink/internal/config"
+	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository/database"
 	"github.com/RussiaFPS/shortlink/internal/repository/memory"
 	"log"
@@ -11,6 +12,7 @@ type IURLShortenerRepository interface {
 	GetShortURL(originalURL string) (string, bool)
 	StorageURL(originalURL string, shortID string) (string, error)
 	GetOriginalURL(shortID string) (string, bool)
+	StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, error)
 	Ping() error
 }
 

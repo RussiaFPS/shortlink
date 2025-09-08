@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/RussiaFPS/shortlink/internal/config"
+	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository"
 	"log"
 	"math/rand"
@@ -12,6 +13,7 @@ const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 type IURLShortenerService interface {
 	Shorten(originalURL string) (string, error)
 	GetOriginal(shortURL string) (string, bool)
+	ShorterMulti(req []model.MultiReq) ([]model.MultiResp, error)
 	PingDB() error
 	randShortID() string
 	generateShortID() string
@@ -73,4 +75,25 @@ func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {
 	log.Printf("URLShortenerService:GetOriginal with shortID: %s", shortID)
 	return s.r.GetOriginalURL(shortID)
+}
+
+func (s *URLShortenerService) ShorterMulti(req []model.MultiReq) ([]model.MultiResp, error) {
+	data := make([]model.URLStorage, 0)
+
+	for _, v := range req {
+		d := model.URLStorage{
+			UUID:        v.CorrID,
+			OriginalURL: v.URL,
+		}
+
+		if shortURL, ok := s.r.GetShortURL(v.URL); ok {
+			d.ShortURL = shortURL
+		} else {
+			d.ShortURL = s.generateShortID()
+		}
+
+		data = append(data, d)
+	}
+
+	return s.r.StoreMultiURL(data)
 }

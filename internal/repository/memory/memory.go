@@ -111,3 +111,33 @@ func (m *MemStorage) GetOriginalURL(shortID string) (string, bool) {
 func (m *MemStorage) Ping() error {
 	return fmt.Errorf("db not ready")
 }
+
+func (m *MemStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	resp := make([]model.MultiResp, 0)
+	m.records = append(m.records, req...)
+	if m.cfg.FileStoragePath != "" {
+		newData, err := json.MarshalIndent(m.records, "", "   ")
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal data: %v", err)
+		}
+
+		if err = m.storage.SaveDataToFile(newData); err != nil {
+			return nil, fmt.Errorf("failed to save data to file: %v", err)
+		}
+	}
+
+	for _, r := range req {
+		m.urls[r.ShortURL] = r.OriginalURL
+		m.urlToShort[r.OriginalURL] = r.ShortURL
+
+		resp = append(resp, model.MultiResp{
+			CorrID:   r.UUID,
+			ShortURL: fmt.Sprintf("%s/%s", m.cfg.BaseURL, r.ShortURL),
+		})
+	}
+
+	return resp, nil
+}

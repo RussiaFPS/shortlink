@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/config/db/postgres"
+	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
@@ -85,4 +86,33 @@ func (db *DBStorage) GetOriginalURL(shortID string) (string, bool) {
 		log.Fatalf("failed to fetch long url: %v", err)
 	}
 	return ur, true
+}
+
+func (db *DBStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tx, err := db.pgxPool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	response := make([]model.MultiResp, 0)
+	for _, v := range req {
+		if _, err = db.pgxPool.Exec(ctx, addURL, v.ShortURL, v.OriginalURL); err != nil {
+			return nil, err
+		}
+
+		response = append(response, model.MultiResp{
+			CorrID:   v.UUID,
+			ShortURL: v.ShortURL,
+		})
+	}
+
+	log.Printf("Resp multi add: %s\n", response)
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return response, nil
 }

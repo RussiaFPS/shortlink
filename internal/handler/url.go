@@ -21,6 +21,7 @@ type IURLShortenerHandler interface {
 	GetShortURL(c *gin.Context)
 	GetOriginURL(c *gin.Context)
 	PingDB(c *gin.Context)
+	ShorterMulti(c *gin.Context)
 }
 
 type URLShortenerHandler struct {
@@ -37,6 +38,7 @@ func NewURLShortenerHandler(cfg *config.Config) IURLShortenerHandler {
 	}
 
 	h.mux.Use(logger.ReqLogger()).Use(GzipMiddleware())
+	h.mux.POST("/api/shorten/batch", h.ShorterMulti)
 	h.mux.POST("/api/shorten", h.GetAPIShortURL)
 	h.mux.POST("/", h.GetShortURL)
 	h.mux.GET("/:id", h.GetOriginURL)
@@ -51,6 +53,23 @@ func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	} else {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
+}
+
+func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
+	buffer := make([]model.MultiReq, 0)
+
+	if err := c.BindJSON(&buffer); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := h.s.ShorterMulti(buffer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, resp)
 }
 
 func (h *URLShortenerHandler) PingDB(c *gin.Context) {
