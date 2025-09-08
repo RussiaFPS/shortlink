@@ -8,6 +8,7 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/service"
 	"github.com/gin-gonic/gin"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -143,6 +144,7 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 		return
 	}
 
+	log.Printf("find shortId: %v and redirectURL: %v", id, originalURL)
 	c.Header("Location", originalURL)
-	c.Redirect(http.StatusTemporaryRedirect, originalURL)
+	c.Status(http.StatusTemporaryRedirect)
 }
