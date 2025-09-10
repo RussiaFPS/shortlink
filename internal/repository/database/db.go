@@ -96,11 +96,11 @@ func (db *DBStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, e
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
 
 	response := make([]model.MultiResp, 0)
 	for _, v := range req {
 		if _, err = db.pgxPool.Exec(ctx, addURL, v.ShortURL, v.OriginalURL); err != nil {
+			tx.Rollback(ctx)
 			return nil, err
 		}
 
@@ -110,9 +110,11 @@ func (db *DBStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, e
 		})
 	}
 
-	log.Printf("Resp multi add: %s\n", response)
 	if err = tx.Commit(ctx); err != nil {
+		tx.Rollback(ctx)
 		return nil, err
 	}
+
+	log.Printf("Resp multi add: %s\n", response)
 	return response, nil
 }
