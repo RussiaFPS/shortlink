@@ -146,6 +146,15 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 	}
 
 	log.Printf("find shortId: %v and redirectURL: %v", id, originalURL)
-	c.Header("Location", originalURL)
-	c.Status(http.StatusTemporaryRedirect)
+
+	// debug
+	u, err := url.Parse(originalURL)
+	if err != nil {
+		log.Printf("not parse URL: %v", err)
+		c.Status(http.StatusNotFound)
+		return
+	}
+	u.Scheme = "http"
+
+	c.Redirect(http.StatusTemporaryRedirect, u.String())
 }
