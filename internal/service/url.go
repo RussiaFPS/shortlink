@@ -80,7 +80,7 @@ func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {
 }
 
 func (s *URLShortenerService) ShorterMulti(req []model.MultiReq) ([]model.MultiResp, error) {
-	data := make([]model.URLStorage, 0)
+	data, oldData := make([]model.URLStorage, 0), make([]model.MultiResp, 0)
 
 	for _, v := range req {
 		d := model.URLStorage{
@@ -89,12 +89,11 @@ func (s *URLShortenerService) ShorterMulti(req []model.MultiReq) ([]model.MultiR
 		}
 
 		if shortURL, ok := s.r.GetShortURL(v.URL); ok {
-			d.ShortURL = shortURL
+			oldData = append(oldData, model.MultiResp{CorrID: v.CorrID, ShortURL: shortURL})
 		} else {
 			d.ShortURL = s.generateShortID()
+			data = append(data, d)
 		}
-
-		data = append(data, d)
 	}
 
 	resp, err := s.r.StoreMultiURL(data)
@@ -102,6 +101,7 @@ func (s *URLShortenerService) ShorterMulti(req []model.MultiReq) ([]model.MultiR
 		return nil, err
 	}
 
+	resp = append(resp, oldData...)
 	for i := range resp {
 		if !strings.Contains(resp[i].ShortURL, "http") {
 			resp[i].ShortURL = fmt.Sprintf("%s/%s", s.cfg.BaseURL, resp[i].ShortURL)
