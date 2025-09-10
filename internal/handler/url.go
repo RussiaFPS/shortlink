@@ -147,7 +147,7 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 
 	log.Printf("find shortId: %v and redirectURL: %v", id, originalURL)
 
-	c.Writer.Header().Set("Location", originalURL)
-	c.Writer.WriteHeader(http.StatusTemporaryRedirect)
+	c.Header("Location", originalURL)
+	c.Status(http.StatusTemporaryRedirect)
 	//c.Redirect(http.StatusTemporaryRedirect, originalURL)
 }
