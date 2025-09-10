@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository"
 	"log"
 	"math/rand"
+	"strings"
 )
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -61,7 +63,7 @@ func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
 	log.Printf("URLShortenerService:Shorten with originalURL: %s", originalURL)
 
 	if shortURL, ok := s.r.GetShortURL(originalURL); ok {
-		return shortURL, nil
+		return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortURL), nil
 	}
 
 	URL, err := s.r.StorageURL(originalURL, s.generateShortID())
@@ -69,7 +71,7 @@ func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
 		return "", err
 	}
 
-	return URL, nil
+	return fmt.Sprintf("%s/%s", s.cfg.BaseURL, URL), nil
 }
 
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {
@@ -95,5 +97,16 @@ func (s *URLShortenerService) ShorterMulti(req []model.MultiReq) ([]model.MultiR
 		data = append(data, d)
 	}
 
-	return s.r.StoreMultiURL(data)
+	resp, err := s.r.StoreMultiURL(data)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range resp {
+		if !strings.Contains(resp[i].ShortURL, "http") {
+			resp[i].ShortURL = fmt.Sprintf("%s/%s", s.cfg.BaseURL, resp[i].ShortURL)
+		}
+	}
+
+	return resp, nil
 }

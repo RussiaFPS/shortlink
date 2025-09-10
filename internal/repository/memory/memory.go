@@ -64,7 +64,7 @@ func (m *MemStorage) GetShortURL(originalURL string) (string, bool) {
 	defer m.mu.RUnlock()
 
 	if v, ok := m.urlToShort[originalURL]; ok {
-		return fmt.Sprintf("%s/%s", m.cfg.BaseURL, v), true
+		return v, true
 	}
 
 	return "", false
@@ -95,7 +95,7 @@ func (m *MemStorage) StorageURL(originalURL string, shortID string) (string, err
 	m.urls[shortID] = originalURL
 	m.urlToShort[originalURL] = shortID
 
-	return fmt.Sprintf("%s/%s", m.cfg.BaseURL, shortID), nil
+	return shortID, nil
 }
 
 func (m *MemStorage) GetOriginalURL(shortID string) (string, bool) {
@@ -135,7 +135,7 @@ func (m *MemStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, e
 
 		resp = append(resp, model.MultiResp{
 			CorrID:   r.UUID,
-			ShortURL: fmt.Sprintf("%s/%s", m.cfg.BaseURL, r.ShortURL),
+			ShortURL: r.ShortURL,
 		})
 	}
 
