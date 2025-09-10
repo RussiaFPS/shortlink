@@ -115,6 +115,6 @@ func (db *DBStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, e
 		return nil, err
 	}
 
-	log.Printf("Resp multi add: %s\n , with req: %s\n", response, req)
+	log.Printf("Resp multi add: %#v\n , with req: %#v\n", response, req)
 	return response, nil
 }
