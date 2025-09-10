@@ -140,6 +140,7 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 
 	originalURL, exists := h.s.GetOriginal(id)
 	if !exists {
+		log.Printf("not exists: %s", id)
 		c.Status(http.StatusNotFound)
 		return
 	}
