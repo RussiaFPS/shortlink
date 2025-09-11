@@ -23,6 +23,7 @@ func New(cfg *config.Config) IURLShortenerRepository {
 	if cfg.DSN != "" {
 		storage, err = database.New(cfg)
 		if err != nil {
+			log.Printf("failed to connect to database: %v", err)
 			storage, err = memory.New(cfg)
 			if err != nil {
 				log.Fatalf("failed init memory storage: %v", err)

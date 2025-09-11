@@ -13,7 +13,7 @@ import (
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 type IURLShortenerService interface {
-	Shorten(originalURL string) (string, error)
+	Shorten(originalURL string) (string, bool, error)
 	GetOriginal(shortURL string) (string, bool)
 	ShorterMulti(req []model.MultiReq) ([]model.MultiResp, error)
 	PingDB() error
@@ -59,19 +59,19 @@ func (s *URLShortenerService) randShortID() string {
 	return string(id)
 }
 
-func (s *URLShortenerService) Shorten(originalURL string) (string, error) {
+func (s *URLShortenerService) Shorten(originalURL string) (string, bool, error) {
 	log.Printf("URLShortenerService:Shorten with originalURL: %s", originalURL)
 
 	if shortURL, ok := s.r.GetShortURL(originalURL); ok {
-		return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortURL), nil
+		return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortURL), true, nil
 	}
 
 	URL, err := s.r.StorageURL(originalURL, s.generateShortID())
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
-	return fmt.Sprintf("%s/%s", s.cfg.BaseURL, URL), nil
+	return fmt.Sprintf("%s/%s", s.cfg.BaseURL, URL), false, nil
 }
 
 func (s *URLShortenerService) GetOriginal(shortID string) (string, bool) {

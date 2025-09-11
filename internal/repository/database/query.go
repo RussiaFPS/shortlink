@@ -26,4 +26,8 @@ const createTable = `
                         CONSTRAINT unique_long_url UNIQUE (long_url),
                         CONSTRAINT unique_short_url UNIQUE (short_url)
 );
+
+CREATE INDEX IF NOT EXISTS idx_urls_shortURL ON urls(short_url);
+
+CREATE INDEX IF NOT EXISTS idx_urls_longURL ON urls(long_url);
 `

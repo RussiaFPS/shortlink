@@ -101,9 +101,15 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 		return
 	}
 
-	result, err := h.s.Shorten(req.URL)
+	result, ok, err := h.s.Shorten(req.URL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if ok {
+		resp.Result = result
+		c.JSON(http.StatusConflict, resp)
 		return
 	}
 
@@ -125,9 +131,15 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 
-	shortURL, err := h.s.Shorten(originalURL)
+	shortURL, ok, err := h.s.Shorten(originalURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if ok {
+		c.Header("Content-Type", "text/plain")
+		c.String(http.StatusConflict, shortURL)
 		return
 	}
 
