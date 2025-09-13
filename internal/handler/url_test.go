@@ -7,6 +7,7 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -63,6 +64,7 @@ func TestGetAPIShortURL(t *testing.T) {
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
 			}
+			log.Printf("Server started at %v", srv.Addr)
 
 			resp := model.ResponseGetAPIShortURL{}
 
@@ -142,6 +144,7 @@ func TestGetShortURL(t *testing.T) {
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
 			}
+			log.Printf("Server started at %v", srv.Addr)
 
 			req := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 
@@ -176,6 +179,7 @@ func TestGetOriginURL(t *testing.T) {
 		Addr:    cfg.ServerAddr,
 		Handler: router.Handler(),
 	}
+	log.Printf("Server started at %v", srv.Addr)
 	originalURL := "https://practicum.yandex.ru/"
 
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(originalURL))
