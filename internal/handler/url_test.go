@@ -6,6 +6,7 @@ import (
 	"flag"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -55,8 +56,13 @@ func TestGetAPIShortURL(t *testing.T) {
 			}()
 			os.Args = []string{"test"}
 
+			router := gin.Default()
 			cfg := config.NewConfig()
-			h := NewURLShortenerHandler(cfg)
+			NewURLShortenerHandler(router, cfg)
+			srv := &http.Server{
+				Addr:    cfg.ServerAddr,
+				Handler: router.Handler(),
+			}
 
 			resp := model.ResponseGetAPIShortURL{}
 
@@ -68,7 +74,7 @@ func TestGetAPIShortURL(t *testing.T) {
 			req := httptest.NewRequest(tt.method, "/api/shorten", bytes.NewReader(jsonBody))
 
 			rr := httptest.NewRecorder()
-			h.ServeHTTP(rr, req)
+			srv.Handler.ServeHTTP(rr, req)
 
 			if rr.Code != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, rr.Code)
@@ -129,13 +135,18 @@ func TestGetShortURL(t *testing.T) {
 			}()
 			os.Args = []string{"test"}
 
+			router := gin.Default()
 			cfg := config.NewConfig()
-			h := NewURLShortenerHandler(cfg)
+			NewURLShortenerHandler(router, cfg)
+			srv := &http.Server{
+				Addr:    cfg.ServerAddr,
+				Handler: router.Handler(),
+			}
 
 			req := httptest.NewRequest(tt.method, "/", strings.NewReader(tt.body))
 
 			rr := httptest.NewRecorder()
-			h.ServeHTTP(rr, req)
+			srv.Handler.ServeHTTP(rr, req)
 
 			if rr.Code != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, rr.Code)
@@ -158,13 +169,18 @@ func TestGetOriginURL(t *testing.T) {
 	}()
 	os.Args = []string{"test"}
 
+	router := gin.Default()
 	cfg := config.NewConfig()
-	h := NewURLShortenerHandler(cfg)
+	NewURLShortenerHandler(router, cfg)
+	srv := &http.Server{
+		Addr:    cfg.ServerAddr,
+		Handler: router.Handler(),
+	}
 	originalURL := "https://practicum.yandex.ru/"
 
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(originalURL))
 	rr := httptest.NewRecorder()
-	h.ServeHTTP(rr, req)
+	srv.Handler.ServeHTTP(rr, req)
 
 	shortID := strings.TrimPrefix(rr.Body.String(), cfg.BaseURL+"/")
 	tests := []struct {
@@ -206,7 +222,7 @@ func TestGetOriginURL(t *testing.T) {
 			req = httptest.NewRequest(tt.method, tt.path, nil)
 			rr = httptest.NewRecorder()
 
-			h.ServeHTTP(rr, req)
+			srv.Handler.ServeHTTP(rr, req)
 
 			if rr.Code != tt.expectedStatus {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, rr.Code)
