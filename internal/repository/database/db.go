@@ -18,13 +18,13 @@ type DBStorage struct {
 	pgxPool *pgxpool.Pool
 }
 
-func New(cfg *config.Config) (*DBStorage, error) {
-	dbConn, err := postgres.NewPostgres(context.Background(), cfg.DSN)
+func New(ctx context.Context, cfg *config.Config) (*DBStorage, error) {
+	dbConn, err := postgres.NewPostgres(ctx, cfg.DSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize dbConn: %v", err)
 	}
 
-	if err = initTable(dbConn); err != nil {
+	if err = initTable(ctx, dbConn); err != nil {
 		return nil, fmt.Errorf("failed to create table: %v", err)
 	}
 
@@ -34,26 +34,26 @@ func New(cfg *config.Config) (*DBStorage, error) {
 	}, nil
 }
 
-func initTable(db *pgxpool.Pool) error {
-	if _, err := db.Exec(context.Background(), createTable); err != nil {
+func initTable(ctx context.Context, db *pgxpool.Pool) error {
+	if _, err := db.Exec(ctx, createTable); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *DBStorage) Ping() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+func (db *DBStorage) Ping(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
 	return db.pgxPool.Ping(ctx)
 }
 
-func (db *DBStorage) GetShortURL(originalURL string) (string, bool) {
+func (db *DBStorage) GetShortURL(ctx context.Context, originalURL string) (string, bool) {
 	var ur string
 
 	log.Printf("DBStorage:GetShortURL with originalURL: %s", originalURL)
 
-	err := db.pgxPool.QueryRow(context.Background(), findShortURL, originalURL).Scan(&ur)
+	err := db.pgxPool.QueryRow(ctx, findShortURL, originalURL).Scan(&ur)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		return "", false
 	}
@@ -63,22 +63,23 @@ func (db *DBStorage) GetShortURL(originalURL string) (string, bool) {
 	return fmt.Sprintf("%s/%s", db.config.BaseURL, ur), true
 }
 
-func (db *DBStorage) StorageURL(originalURL string, shortID string) (string, error) {
+func (db *DBStorage) StorageURL(ctx context.Context, originalURL string, shortID string) (string, error) {
+	var shortURL string
 	log.Printf("DBStorage:StorageURL with originalURL: %s,shortID: %s", originalURL, shortID)
 
-	_, err := db.pgxPool.Exec(context.Background(), addURL, shortID, originalURL)
+	err := db.pgxPool.QueryRow(ctx, addURL, shortID, originalURL).Scan(&shortURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to add short url to db: %v", err)
 	}
-	return fmt.Sprintf("%s/%s", db.config.BaseURL, shortID), nil
+	return fmt.Sprintf("%s/%s", db.config.BaseURL, shortURL), nil
 }
 
-func (db *DBStorage) GetOriginalURL(shortID string) (string, bool) {
+func (db *DBStorage) GetOriginalURL(ctx context.Context, shortID string) (string, bool) {
 	var ur string
 
 	log.Printf("DBStorage:GetOriginalURL with shortID: %s", shortID)
 
-	err := db.pgxPool.QueryRow(context.Background(), findLongURL, shortID).Scan(&ur)
+	err := db.pgxPool.QueryRow(ctx, findLongURL, shortID).Scan(&ur)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		return "", false
 	}
@@ -88,8 +89,8 @@ func (db *DBStorage) GetOriginalURL(shortID string) (string, bool) {
 	return ur, true
 }
 
-func (db *DBStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (db *DBStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	tx, err := db.pgxPool.Begin(ctx)
@@ -99,14 +100,16 @@ func (db *DBStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, e
 
 	response := make([]model.MultiResp, 0)
 	for _, v := range req {
-		if _, err = db.pgxPool.Exec(ctx, addURL, v.ShortURL, v.OriginalURL); err != nil {
+		var short string
+
+		if err = tx.QueryRow(ctx, addURL, v.ShortURL, v.OriginalURL).Scan(&short); err != nil {
 			tx.Rollback(ctx)
 			return nil, err
 		}
 
 		response = append(response, model.MultiResp{
 			CorrID:   v.UUID,
-			ShortURL: v.ShortURL,
+			ShortURL: short,
 		})
 	}
 

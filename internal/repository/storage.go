@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository/database"
@@ -9,19 +10,19 @@ import (
 )
 
 type IURLShortenerRepository interface {
-	GetShortURL(originalURL string) (string, bool)
-	StorageURL(originalURL string, shortID string) (string, error)
-	GetOriginalURL(shortID string) (string, bool)
-	StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, error)
-	Ping() error
+	GetShortURL(ctx context.Context, originalURL string) (string, bool)
+	StorageURL(ctx context.Context, originalURL string, shortID string) (string, error)
+	GetOriginalURL(ctx context.Context, shortID string) (string, bool)
+	StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error)
+	Ping(ctx context.Context) error
 }
 
-func New(cfg *config.Config) IURLShortenerRepository {
+func New(ctx context.Context, cfg *config.Config) IURLShortenerRepository {
 	var storage IURLShortenerRepository
 	var err error
 
 	if cfg.DSN != "" {
-		storage, err = database.New(cfg)
+		storage, err = database.New(ctx, cfg)
 		if err != nil {
 			log.Printf("failed to connect to database: %v", err)
 			storage, err = memory.New(cfg)

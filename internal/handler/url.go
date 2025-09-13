@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/logger"
@@ -17,7 +18,6 @@ import (
 const lenShortURL = 8
 
 type IURLShortenerHandler interface {
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
 	GetAPIShortURL(c *gin.Context)
 	GetShortURL(c *gin.Context)
 	GetOriginURL(c *gin.Context)
@@ -26,15 +26,15 @@ type IURLShortenerHandler interface {
 }
 
 type URLShortenerHandler struct {
-	mux gin.IRouter
+	mux *gin.Engine
 	s   service.IURLShortenerService
 	cfg *config.Config
 }
 
-func NewURLShortenerHandler(cfg *config.Config) IURLShortenerHandler {
+func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config) IURLShortenerHandler {
 	h := &URLShortenerHandler{
-		mux: gin.Default(),
-		s:   service.NewURLShortener(cfg, lenShortURL),
+		mux: router,
+		s:   service.NewURLShortener(context.Background(), cfg, lenShortURL),
 		cfg: cfg,
 	}
 
@@ -48,14 +48,6 @@ func NewURLShortenerHandler(cfg *config.Config) IURLShortenerHandler {
 	return h
 }
 
-func (h *URLShortenerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if handler, ok := h.mux.(http.Handler); ok {
-		handler.ServeHTTP(w, r)
-	} else {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-	}
-}
-
 func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
 	buffer := make([]model.MultiReq, 0)
 
@@ -64,7 +56,7 @@ func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.s.ShorterMulti(buffer)
+	resp, err := h.s.ShorterMulti(c, buffer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -74,7 +66,7 @@ func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
 }
 
 func (h *URLShortenerHandler) PingDB(c *gin.Context) {
-	if err := h.s.PingDB(); err != nil {
+	if err := h.s.PingDB(c); err != nil {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -101,7 +93,7 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 		return
 	}
 
-	result, ok, err := h.s.Shorten(req.URL)
+	result, ok, err := h.s.Shorten(c, req.URL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -131,7 +123,7 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 
-	shortURL, ok, err := h.s.Shorten(originalURL)
+	shortURL, ok, err := h.s.Shorten(c, originalURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -150,7 +142,7 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 	id := c.Param("id")
 
-	originalURL, exists := h.s.GetOriginal(id)
+	originalURL, exists := h.s.GetOriginal(c, id)
 	if !exists {
 		log.Printf("not exists: %s", id)
 		c.Status(http.StatusNotFound)

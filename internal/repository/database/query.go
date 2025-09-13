@@ -4,7 +4,7 @@ const addURL = `
 		INSERT INTO urls (short_url, long_url)
 			VALUES ($1, $2)
 		ON CONFLICT (long_url)
-			DO NOTHING
+			DO UPDATE SET short_url = urls.short_url
 		RETURNING short_url;
 `
 

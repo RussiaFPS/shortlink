@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
@@ -59,7 +60,7 @@ func (m *MemStorage) loadRecords() error {
 	return nil
 }
 
-func (m *MemStorage) GetShortURL(originalURL string) (string, bool) {
+func (m *MemStorage) GetShortURL(ctx context.Context, originalURL string) (string, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -70,7 +71,7 @@ func (m *MemStorage) GetShortURL(originalURL string) (string, bool) {
 	return "", false
 }
 
-func (m *MemStorage) StorageURL(originalURL string, shortID string) (string, error) {
+func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -98,7 +99,7 @@ func (m *MemStorage) StorageURL(originalURL string, shortID string) (string, err
 	return shortID, nil
 }
 
-func (m *MemStorage) GetOriginalURL(shortID string) (string, bool) {
+func (m *MemStorage) GetOriginalURL(ctx context.Context, shortID string) (string, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -108,11 +109,11 @@ func (m *MemStorage) GetOriginalURL(shortID string) (string, bool) {
 	return "", false
 }
 
-func (m *MemStorage) Ping() error {
+func (m *MemStorage) Ping(ctx context.Context) error {
 	return fmt.Errorf("db not ready")
 }
 
-func (m *MemStorage) StoreMultiURL(req []model.URLStorage) ([]model.MultiResp, error) {
+func (m *MemStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
