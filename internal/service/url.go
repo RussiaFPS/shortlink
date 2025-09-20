@@ -14,12 +14,13 @@ import (
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 type IURLShortenerService interface {
-	Shorten(ctx context.Context, originalURL string) (string, bool, error)
+	Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error)
 	GetOriginal(ctx context.Context, shortURL string) (string, bool)
-	ShorterMulti(ctx context.Context, req []model.MultiReq) ([]model.MultiResp, error)
+	ShorterMulti(ctx context.Context, req []model.MultiReq, userID string) ([]model.MultiResp, error)
 	PingDB(ctx context.Context) error
 	randShortID() string
 	generateShortID(ctx context.Context) string
+	GetShortenedURLByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error)
 }
 
 type URLShortenerService struct {
@@ -60,14 +61,14 @@ func (s *URLShortenerService) randShortID() string {
 	return string(id)
 }
 
-func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string) (string, bool, error) {
+func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error) {
 	log.Printf("URLShortenerService:Shorten with originalURL: %s", originalURL)
 
 	if shortURL, ok := s.r.GetShortURL(ctx, originalURL); ok {
 		return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortURL), true, nil
 	}
 
-	URL, err := s.r.StorageURL(ctx, originalURL, s.generateShortID(ctx))
+	URL, err := s.r.StorageURL(ctx, originalURL, s.generateShortID(ctx), userID)
 	if err != nil {
 		return "", false, err
 	}
@@ -80,13 +81,14 @@ func (s *URLShortenerService) GetOriginal(ctx context.Context, shortID string) (
 	return s.r.GetOriginalURL(ctx, shortID)
 }
 
-func (s *URLShortenerService) ShorterMulti(ctx context.Context, req []model.MultiReq) ([]model.MultiResp, error) {
+func (s *URLShortenerService) ShorterMulti(ctx context.Context, req []model.MultiReq, userID string) ([]model.MultiResp, error) {
 	data, oldData := make([]model.URLStorage, 0), make([]model.MultiResp, 0)
 
 	for _, v := range req {
 		d := model.URLStorage{
 			UUID:        v.CorrID,
 			OriginalURL: v.URL,
+			UserID:      userID,
 		}
 
 		if shortURL, ok := s.r.GetShortURL(ctx, v.URL); ok {
@@ -110,4 +112,8 @@ func (s *URLShortenerService) ShorterMulti(ctx context.Context, req []model.Mult
 	}
 
 	return resp, nil
+}
+
+func (s *URLShortenerService) GetShortenedURLByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
+	return s.r.FindAllByUserID(ctx, userID)
 }

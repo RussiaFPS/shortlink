@@ -11,10 +11,11 @@ import (
 
 type IURLShortenerRepository interface {
 	GetShortURL(ctx context.Context, originalURL string) (string, bool)
-	StorageURL(ctx context.Context, originalURL string, shortID string) (string, error)
+	StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error)
 	GetOriginalURL(ctx context.Context, shortID string) (string, bool)
 	StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error)
 	Ping(ctx context.Context) error
+	FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error)
 }
 
 func New(ctx context.Context, cfg *config.Config) IURLShortenerRepository {

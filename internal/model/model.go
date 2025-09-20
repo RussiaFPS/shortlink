@@ -12,6 +12,7 @@ type URLStorage struct {
 	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
+	UserID      string `json:"user_id"`
 }
 
 type MultiReq struct {
@@ -22,4 +23,15 @@ type MultiReq struct {
 type MultiResp struct {
 	CorrID   string `json:"correlation_id"`
 	ShortURL string `json:"short_url"`
+}
+
+type RespUserURL struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+type UserURL struct {
+	UserID   string `json:"user_id"`
+	ShortURL string `json:"short_url"`
+	LongURL  string `json:"long_url"`
 }

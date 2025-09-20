@@ -23,6 +23,7 @@ type IURLShortenerHandler interface {
 	GetOriginURL(c *gin.Context)
 	PingDB(c *gin.Context)
 	ShorterMulti(c *gin.Context)
+	GetUserURL(c *gin.Context)
 }
 
 type URLShortenerHandler struct {
@@ -38,14 +39,33 @@ func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config) IURLShortene
 		cfg: cfg,
 	}
 
-	h.mux.Use(logger.ReqLogger()).Use(GzipMiddleware())
+	h.mux.Use(logger.ReqLogger()).Use(GzipMiddleware()).Use(AuthenticationMiddleware(&cfg.SecretKey))
 	h.mux.POST("/api/shorten/batch", h.ShorterMulti)
 	h.mux.POST("/api/shorten", h.GetAPIShortURL)
+	h.mux.GET("/api/user/urls", h.GetUserURL)
 	h.mux.POST("/", h.GetShortURL)
 	h.mux.GET("/:id", h.GetOriginURL)
 	h.mux.GET("/ping", h.PingDB)
 
 	return h
+}
+
+func (h *URLShortenerHandler) GetUserURL(c *gin.Context) {
+	uid := c.GetString("uid")
+	if uid == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	originalURL, err := h.s.GetShortenedURLByUserID(c, uid)
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	if len(originalURL) == 0 {
+		c.AbortWithStatus(http.StatusNoContent)
+		return
+	}
+	c.JSON(http.StatusOK, originalURL)
 }
 
 func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
@@ -56,7 +76,7 @@ func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.s.ShorterMulti(c, buffer)
+	resp, err := h.s.ShorterMulti(c, buffer, c.GetString("uid"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -93,7 +113,7 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 		return
 	}
 
-	result, ok, err := h.s.Shorten(c, req.URL)
+	result, ok, err := h.s.Shorten(c, req.URL, c.GetString("uid"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -123,7 +143,7 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 
-	shortURL, ok, err := h.s.Shorten(c, originalURL)
+	shortURL, ok, err := h.s.Shorten(c, originalURL, c.GetString("uid"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -60,18 +60,18 @@ func (db *DBStorage) GetShortURL(ctx context.Context, originalURL string) (strin
 	if err != nil {
 		log.Fatalf("failed to fetch short url: %v", err)
 	}
-	return fmt.Sprintf("%s/%s", db.config.BaseURL, ur), true
+	return ur, true
 }
 
-func (db *DBStorage) StorageURL(ctx context.Context, originalURL string, shortID string) (string, error) {
+func (db *DBStorage) StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error) {
 	var shortURL string
 	log.Printf("DBStorage:StorageURL with originalURL: %s,shortID: %s", originalURL, shortID)
 
-	err := db.pgxPool.QueryRow(ctx, addURL, shortID, originalURL).Scan(&shortURL)
+	err := db.pgxPool.QueryRow(ctx, addURL, shortID, originalURL, userID).Scan(&shortURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to add short url to db: %v", err)
 	}
-	return fmt.Sprintf("%s/%s", db.config.BaseURL, shortURL), nil
+	return shortURL, nil
 }
 
 func (db *DBStorage) GetOriginalURL(ctx context.Context, shortID string) (string, bool) {
@@ -102,7 +102,7 @@ func (db *DBStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) 
 	for _, v := range req {
 		var short string
 
-		if err = tx.QueryRow(ctx, addURL, v.ShortURL, v.OriginalURL).Scan(&short); err != nil {
+		if err = tx.QueryRow(ctx, addURL, v.ShortURL, v.OriginalURL, v.UserID).Scan(&short); err != nil {
 			tx.Rollback(ctx)
 			return nil, err
 		}
@@ -120,4 +120,25 @@ func (db *DBStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) 
 
 	log.Printf("Resp multi add: %#v\n , with req: %#v\n", response, req)
 	return response, nil
+}
+
+func (db *DBStorage) FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
+	rows, err := db.pgxPool.Query(ctx, selectFindAllByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var userURLs []model.RespUserURL
+	for rows.Next() {
+		u := model.RespUserURL{}
+		if err = rows.Scan(&u.ShortURL, &u.OriginalURL); err != nil {
+			return nil, err
+		}
+		userURLs = append(userURLs, u)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return userURLs, nil
 }

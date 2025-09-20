@@ -71,7 +71,7 @@ func (m *MemStorage) GetShortURL(ctx context.Context, originalURL string) (strin
 	return "", false
 }
 
-func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID string) (string, error) {
+func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -79,6 +79,7 @@ func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID
 		UUID:        shortID,
 		ShortURL:    shortID,
 		OriginalURL: originalURL,
+		UserID:      userID,
 	}
 
 	m.records = append(m.records, s)
@@ -141,4 +142,18 @@ func (m *MemStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) 
 	}
 
 	return resp, nil
+}
+
+func (m *MemStorage) FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
+	userURLs := make([]model.RespUserURL, 0)
+	for _, v := range m.records {
+		if v.UserID == userID {
+			userURLs = append(userURLs, model.RespUserURL{
+				ShortURL:    v.ShortURL,
+				OriginalURL: v.OriginalURL,
+			})
+		}
+	}
+
+	return userURLs, nil
 }

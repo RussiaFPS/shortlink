@@ -1,8 +1,8 @@
 package database
 
 const addURL = `
-		INSERT INTO urls (short_url, long_url)
-			VALUES ($1, $2)
+		INSERT INTO urls (short_url, long_url, user_id)
+			VALUES ($1, $2, $3)
 		ON CONFLICT (long_url)
 			DO UPDATE SET short_url = urls.short_url
 		RETURNING short_url;
@@ -18,11 +18,17 @@ const findLongURL = `
 			where short_url = $1;
 `
 
+const selectFindAllByUser = `
+	SELECT short_url, long_url FROM urls 
+	    WHERE user_id = $1
+`
+
 const createTable = `
 	CREATE TABLE IF NOT EXISTS urls (
                         id SERIAL PRIMARY KEY,
                         short_url VARCHAR(255) NOT NULL,
                         long_url  VARCHAR(255) NOT NULL,
+	    				user_id	VARCHAR(255),
                         CONSTRAINT unique_long_url UNIQUE (long_url),
                         CONSTRAINT unique_short_url UNIQUE (short_url)
 );
