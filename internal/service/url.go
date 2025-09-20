@@ -115,5 +115,15 @@ func (s *URLShortenerService) ShorterMulti(ctx context.Context, req []model.Mult
 }
 
 func (s *URLShortenerService) GetShortenedURLByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
-	return s.r.FindAllByUserID(ctx, userID)
+	data, err := s.r.FindAllByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range data {
+		if !strings.Contains(data[i].ShortURL, "http") {
+			data[i].ShortURL = fmt.Sprintf("%s/%s", s.cfg.BaseURL, data[i].ShortURL)
+		}
+	}
+	return data, nil
 }
