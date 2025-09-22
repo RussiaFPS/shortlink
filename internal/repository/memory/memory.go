@@ -100,14 +100,16 @@ func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID
 	return shortID, nil
 }
 
-func (m *MemStorage) GetOriginalURL(ctx context.Context, shortID string) (string, bool) {
+func (m *MemStorage) GetOriginalURL(ctx context.Context, shortID string) (*model.URLStorage, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	if v, ok := m.urls[shortID]; ok {
-		return v, true
+		return &model.URLStorage{
+			OriginalURL: v,
+		}, true
 	}
-	return "", false
+	return nil, false
 }
 
 func (m *MemStorage) Ping(ctx context.Context) error {
@@ -156,4 +158,8 @@ func (m *MemStorage) FindAllByUserID(ctx context.Context, userID string) ([]mode
 	}
 
 	return userURLs, nil
+}
+
+func (m *MemStorage) DeleteRecords(ids []string, userID string) error {
+	return nil
 }

@@ -14,11 +14,12 @@ import (
 )
 
 type DBStorage struct {
-	config  *config.Config
-	pgxPool *pgxpool.Pool
+	config       *config.Config
+	pgxPool      *pgxpool.Pool
+	urlsToDelete chan model.DellURL
 }
 
-func New(ctx context.Context, cfg *config.Config) (*DBStorage, error) {
+func New(ctx context.Context, cfg *config.Config, deleteChan chan model.DellURL) (*DBStorage, error) {
 	dbConn, err := postgres.NewPostgres(ctx, cfg.DSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize dbConn: %v", err)
@@ -28,9 +29,11 @@ func New(ctx context.Context, cfg *config.Config) (*DBStorage, error) {
 		return nil, fmt.Errorf("failed to create table: %v", err)
 	}
 
+	go WorkerDeleteURLs(deleteChan, dbConn)
 	return &DBStorage{
-		config:  cfg,
-		pgxPool: dbConn,
+		config:       cfg,
+		pgxPool:      dbConn,
+		urlsToDelete: deleteChan,
 	}, nil
 }
 
@@ -74,19 +77,19 @@ func (db *DBStorage) StorageURL(ctx context.Context, originalURL string, shortID
 	return shortURL, nil
 }
 
-func (db *DBStorage) GetOriginalURL(ctx context.Context, shortID string) (string, bool) {
-	var ur string
+func (db *DBStorage) GetOriginalURL(ctx context.Context, shortID string) (*model.URLStorage, bool) {
+	var ur model.URLStorage
 
 	log.Printf("DBStorage:GetOriginalURL with shortID: %s", shortID)
 
-	err := db.pgxPool.QueryRow(ctx, findLongURL, shortID).Scan(&ur)
+	err := db.pgxPool.QueryRow(ctx, findLongURL, shortID).Scan(&ur.OriginalURL, &ur.DeletedFlag)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		return "", false
+		return nil, false
 	}
 	if err != nil {
 		log.Fatalf("failed to fetch long url: %v", err)
 	}
-	return ur, true
+	return &ur, true
 }
 
 func (db *DBStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error) {
@@ -141,4 +144,17 @@ func (db *DBStorage) FindAllByUserID(ctx context.Context, userID string) ([]mode
 	}
 
 	return userURLs, nil
+}
+
+func (db *DBStorage) DeleteRecords(ids []string, userID string) error {
+	db.urlsToDelete <- model.DellURL{UserID: userID, URLs: ids}
+	return nil
+}
+
+func WorkerDeleteURLs(ch <-chan model.DellURL, pool *pgxpool.Pool) {
+	for userUrls := range ch {
+		if _, err := pool.Exec(context.Background(), dellURL, userUrls.URLs, userUrls.UserID); err != nil {
+			log.Printf("failed deleting: %v", err)
+		}
+	}
 }

@@ -14,7 +14,7 @@ const findShortURL = `
 `
 
 const findLongURL = `
-		select long_url from urls
+		select long_url,is_deleted from urls
 			where short_url = $1;
 `
 
@@ -23,12 +23,18 @@ const selectFindAllByUser = `
 	    WHERE user_id = $1
 `
 
+const dellURL = `
+	UPDATE urls SET is_deleted = true 
+	    WHERE short_url = ANY($1) AND user_id = $2;
+`
+
 const createTable = `
 	CREATE TABLE IF NOT EXISTS urls (
                         id SERIAL PRIMARY KEY,
                         short_url VARCHAR(255) NOT NULL,
                         long_url  VARCHAR(255) NOT NULL,
 	    				user_id	VARCHAR(255),
+	    				is_deleted BOOLEAN DEFAULT FALSE,
                         CONSTRAINT unique_long_url UNIQUE (long_url),
                         CONSTRAINT unique_short_url UNIQUE (short_url)
 );

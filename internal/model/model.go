@@ -9,10 +9,11 @@ type ResponseGetAPIShortURL struct {
 }
 
 type URLStorage struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-	UserID      string `json:"user_id"`
+	UUID        string `json:"uuid" db:"uuid"`
+	ShortURL    string `json:"short_url" db:"short_url"`
+	OriginalURL string `json:"original_url" db:"long_url"`
+	UserID      string `json:"user_id" db:"user_id"`
+	DeletedFlag bool   `json:"is_deleted" db:"is_deleted"`
 }
 
 type MultiReq struct {
@@ -34,4 +35,9 @@ type UserURL struct {
 	UserID   string `json:"user_id"`
 	ShortURL string `json:"short_url"`
 	LongURL  string `json:"long_url"`
+}
+
+type DellURL struct {
+	UserID string
+	URLs   []string
 }

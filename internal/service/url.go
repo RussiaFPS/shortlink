@@ -15,12 +15,13 @@ const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 type IURLShortenerService interface {
 	Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error)
-	GetOriginal(ctx context.Context, shortURL string) (string, bool)
+	GetOriginal(ctx context.Context, shortURL string) (*model.URLStorage, bool)
 	ShorterMulti(ctx context.Context, req []model.MultiReq, userID string) ([]model.MultiResp, error)
 	PingDB(ctx context.Context) error
 	randShortID() string
 	generateShortID(ctx context.Context) string
 	GetShortenedURLByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error)
+	DeleteURLs(req *[]string, userID string) error
 }
 
 type URLShortenerService struct {
@@ -76,7 +77,7 @@ func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string, u
 	return fmt.Sprintf("%s/%s", s.cfg.BaseURL, URL), false, nil
 }
 
-func (s *URLShortenerService) GetOriginal(ctx context.Context, shortID string) (string, bool) {
+func (s *URLShortenerService) GetOriginal(ctx context.Context, shortID string) (*model.URLStorage, bool) {
 	log.Printf("URLShortenerService:GetOriginal with shortID: %s", shortID)
 	return s.r.GetOriginalURL(ctx, shortID)
 }
@@ -126,4 +127,8 @@ func (s *URLShortenerService) GetShortenedURLByUserID(ctx context.Context, userI
 		}
 	}
 	return data, nil
+}
+
+func (s *URLShortenerService) DeleteURLs(req *[]string, userID string) error {
+	return s.r.DeleteRecords(*req, userID)
 }

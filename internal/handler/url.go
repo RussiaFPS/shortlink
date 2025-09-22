@@ -24,6 +24,7 @@ type IURLShortenerHandler interface {
 	PingDB(c *gin.Context)
 	ShorterMulti(c *gin.Context)
 	GetUserURL(c *gin.Context)
+	DeleteURLs(c *gin.Context)
 }
 
 type URLShortenerHandler struct {
@@ -46,6 +47,7 @@ func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config) IURLShortene
 	h.mux.POST("/", h.GetShortURL)
 	h.mux.GET("/:id", h.GetOriginURL)
 	h.mux.GET("/ping", h.PingDB)
+	h.mux.DELETE("/api/user/urls", h.DeleteURLs)
 
 	return h
 }
@@ -169,6 +171,31 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 		return
 	}
 
+	if originalURL.DeletedFlag {
+		c.AbortWithStatus(http.StatusGone)
+		return
+	}
+
 	log.Printf("find shortId: %v and redirectURL: %v", id, originalURL)
-	c.Redirect(http.StatusTemporaryRedirect, originalURL)
+	c.Redirect(http.StatusTemporaryRedirect, originalURL.OriginalURL)
+}
+
+func (h *URLShortenerHandler) DeleteURLs(c *gin.Context) {
+	uid := c.GetString("uid")
+	if uid == "" {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
+	var req []string
+	if err := c.BindJSON(&req); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	if err := h.s.DeleteURLs(&req, uid); err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusAccepted, nil)
 }

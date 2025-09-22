@@ -12,10 +12,11 @@ import (
 type IURLShortenerRepository interface {
 	GetShortURL(ctx context.Context, originalURL string) (string, bool)
 	StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error)
-	GetOriginalURL(ctx context.Context, shortID string) (string, bool)
+	GetOriginalURL(ctx context.Context, shortID string) (*model.URLStorage, bool)
 	StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error)
 	Ping(ctx context.Context) error
 	FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error)
+	DeleteRecords(ids []string, userID string) error
 }
 
 func New(ctx context.Context, cfg *config.Config) IURLShortenerRepository {
@@ -23,7 +24,8 @@ func New(ctx context.Context, cfg *config.Config) IURLShortenerRepository {
 	var err error
 
 	if cfg.DSN != "" {
-		storage, err = database.New(ctx, cfg)
+		ch := make(chan model.DellURL)
+		storage, err = database.New(ctx, cfg, ch)
 		if err != nil {
 			log.Printf("failed to connect to database: %v", err)
 			storage, err = memory.New(cfg)
