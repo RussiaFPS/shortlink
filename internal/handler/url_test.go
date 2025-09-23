@@ -2,10 +2,13 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
+	"github.com/RussiaFPS/shortlink/internal/repository"
+	"github.com/RussiaFPS/shortlink/internal/service"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -14,6 +17,8 @@ import (
 	"strings"
 	"testing"
 )
+
+const lenShortURL = 8
 
 func TestGetAPIShortURL(t *testing.T) {
 	tests := []struct {
@@ -59,7 +64,9 @@ func TestGetAPIShortURL(t *testing.T) {
 
 			router := gin.Default()
 			cfg := config.NewConfig()
-			NewURLShortenerHandler(router, cfg)
+			rep := repository.New(context.Background(), cfg)
+			ser := service.NewURLShortener(cfg, lenShortURL, rep)
+			NewURLShortenerHandler(router, cfg, ser)
 			srv := &http.Server{
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
@@ -139,7 +146,9 @@ func TestGetShortURL(t *testing.T) {
 
 			router := gin.Default()
 			cfg := config.NewConfig()
-			NewURLShortenerHandler(router, cfg)
+			rep := repository.New(context.Background(), cfg)
+			ser := service.NewURLShortener(cfg, lenShortURL, rep)
+			NewURLShortenerHandler(router, cfg, ser)
 			srv := &http.Server{
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
@@ -174,7 +183,9 @@ func TestGetOriginURL(t *testing.T) {
 
 	router := gin.Default()
 	cfg := config.NewConfig()
-	NewURLShortenerHandler(router, cfg)
+	rep := repository.New(context.Background(), cfg)
+	ser := service.NewURLShortener(cfg, lenShortURL, rep)
+	NewURLShortenerHandler(router, cfg, ser)
 	srv := &http.Server{
 		Addr:    cfg.ServerAddr,
 		Handler: router.Handler(),

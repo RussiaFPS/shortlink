@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/logger"
@@ -15,9 +14,7 @@ import (
 	"strings"
 )
 
-const lenShortURL = 8
-
-type IURLShortenerHandler interface {
+type URLHandler interface {
 	GetAPIShortURL(c *gin.Context)
 	GetShortURL(c *gin.Context)
 	GetOriginURL(c *gin.Context)
@@ -29,14 +26,14 @@ type IURLShortenerHandler interface {
 
 type URLShortenerHandler struct {
 	mux *gin.Engine
-	s   service.IURLShortenerService
+	s   service.URLService
 	cfg *config.Config
 }
 
-func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config) IURLShortenerHandler {
+func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService) URLHandler {
 	h := &URLShortenerHandler{
 		mux: router,
-		s:   service.NewURLShortener(context.Background(), cfg, lenShortURL),
+		s:   ser,
 		cfg: cfg,
 	}
 
@@ -172,6 +169,7 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 	}
 
 	if originalURL.DeletedFlag {
+		log.Printf("not exists: %s", id)
 		c.AbortWithStatus(http.StatusGone)
 		return
 	}

@@ -6,6 +6,8 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/handler"
 	"github.com/RussiaFPS/shortlink/internal/logger"
+	"github.com/RussiaFPS/shortlink/internal/repository"
+	"github.com/RussiaFPS/shortlink/internal/service"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -15,6 +17,8 @@ import (
 	"time"
 )
 
+const lenShortURL = 8
+
 func main() {
 	cfg := config.NewConfig()
 
@@ -23,7 +27,9 @@ func main() {
 	}
 
 	router := gin.Default()
-	handler.NewURLShortenerHandler(router, cfg)
+	rep := repository.New(context.Background(), cfg)
+	ser := service.NewURLShortener(cfg, lenShortURL, rep)
+	handler.NewURLShortenerHandler(router, cfg, ser)
 
 	srv := &http.Server{
 		Addr:    cfg.ServerAddr,

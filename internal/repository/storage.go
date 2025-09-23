@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-type IURLShortenerRepository interface {
+type URLRepository interface {
 	GetShortURL(ctx context.Context, originalURL string) (string, bool)
 	StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error)
 	GetOriginalURL(ctx context.Context, shortID string) (*model.URLStorage, bool)
@@ -19,8 +19,8 @@ type IURLShortenerRepository interface {
 	DeleteRecords(ids []string, userID string) error
 }
 
-func New(ctx context.Context, cfg *config.Config) IURLShortenerRepository {
-	var storage IURLShortenerRepository
+func New(ctx context.Context, cfg *config.Config) URLRepository {
+	var storage URLRepository
 	var err error
 
 	if cfg.DSN != "" {

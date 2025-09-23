@@ -16,44 +16,48 @@ import (
 func AuthenticationMiddleware(secretKey *string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie("auth")
+		var encryptedCookie, uid string
+		var expiration *time.Time
+
 		if err != nil {
-			newUUID, err := uuid.NewUUID()
+			encryptedCookie, uid, expiration, err = genCookie(secretKey)
 			if err != nil {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
-			uid := newUUID.String()
-			encryptedCookie, err := encryptCookie(uid, []byte(*secretKey))
-			if err != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
-				return
-			}
-			expiration := time.Now().Add(24 * time.Hour)
 			c.SetCookie("auth", encryptedCookie, int(expiration.Unix()), "/", "", false, true)
 			c.Set("uid", uid)
 			c.Next()
 			return
 		}
 
-		uid, err := decryptCookie(cookie, []byte(*secretKey))
+		uid, err = decryptCookie(cookie, []byte(*secretKey))
 		if err != nil {
-			newUUID, err := uuid.NewUUID()
+			encryptedCookie, uid, expiration, err = genCookie(secretKey)
 			if err != nil {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
-			uid = newUUID.String()
-			encryptedCookie, err := encryptCookie(uid, []byte(*secretKey))
-			if err != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
-				return
-			}
-			expiration := time.Now().Add(24 * time.Hour)
 			c.SetCookie("auth", encryptedCookie, int(expiration.Unix()), "/", "", false, true)
 		}
 		c.Set("uid", uid)
 		c.Next()
 	}
+}
+
+func genCookie(secretKey *string) (string, string, *time.Time, error) {
+	newUUID, err := uuid.NewUUID()
+	if err != nil {
+		return "", "", nil, err
+	}
+	uid := newUUID.String()
+	encryptedCookie, err := encryptCookie(uid, []byte(*secretKey))
+	if err != nil {
+		return "", "", nil, err
+	}
+	expiration := time.Now().Add(24 * time.Hour)
+
+	return encryptedCookie, uid, &expiration, nil
 }
 
 func encryptCookie(cookieValue string, secretKey []byte) (string, error) {

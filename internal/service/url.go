@@ -13,7 +13,7 @@ import (
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-type IURLShortenerService interface {
+type URLService interface {
 	Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error)
 	GetOriginal(ctx context.Context, shortURL string) (*model.URLStorage, bool)
 	ShorterMulti(ctx context.Context, req []model.MultiReq, userID string) ([]model.MultiResp, error)
@@ -27,14 +27,14 @@ type IURLShortenerService interface {
 type URLShortenerService struct {
 	cfg      *config.Config
 	shortLen int
-	r        repository.IURLShortenerRepository
+	r        repository.URLRepository
 }
 
-func NewURLShortener(ctx context.Context, cfg *config.Config, shortLen int) IURLShortenerService {
+func NewURLShortener(cfg *config.Config, shortLen int, rep repository.URLRepository) URLService {
 	return &URLShortenerService{
 		shortLen: shortLen,
 		cfg:      cfg,
-		r:        repository.New(ctx, cfg),
+		r:        rep,
 	}
 }
 
