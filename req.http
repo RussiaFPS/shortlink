@@ -1,0 +1,12 @@
+### Добавить короткую ссылку
+POST http://localhost:8080/
+Content-Type: text/plain
+
+https://practicum.yandex.ru/
+###
+
+
+### Получить оригинальную ссылку
+GET http://localhost:8080/tSIMgPYS
+Content-Type: text/plain
+###
