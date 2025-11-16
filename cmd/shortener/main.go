@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/RussiaFPS/shortlink/internal/audit"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/handler"
 	"github.com/RussiaFPS/shortlink/internal/logger"
@@ -26,10 +27,18 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
+	auditService := audit.NewAuditService()
+	if cfg.AuditFile != "" {
+		auditService.Register(audit.NewLogObserver(cfg.AuditFile))
+	}
+	if cfg.AuditURL != "" {
+		auditService.Register(audit.NewHTTPObserver(cfg.AuditURL))
+	}
+
 	router := gin.Default()
 	rep := repository.New(context.Background(), cfg)
 	ser := service.NewURLShortener(cfg, lenShortURL, rep)
-	handler.NewURLShortenerHandler(router, cfg, ser)
+	handler.NewURLShortenerHandler(router, cfg, ser, auditService)
 
 	srv := &http.Server{
 		Addr:    cfg.ServerAddr,

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/RussiaFPS/shortlink/internal/audit"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/logger"
 	"github.com/RussiaFPS/shortlink/internal/model"
@@ -25,16 +26,18 @@ type URLHandler interface {
 }
 
 type URLShortenerHandler struct {
-	mux *gin.Engine
-	s   service.URLService
-	cfg *config.Config
+	mux          *gin.Engine
+	s            service.URLService
+	cfg          *config.Config
+	auditService *audit.AuditService
 }
 
-func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService) URLHandler {
+func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService, auditService *audit.AuditService) URLHandler {
 	h := &URLShortenerHandler{
-		mux: router,
-		s:   ser,
-		cfg: cfg,
+		mux:          router,
+		s:            ser,
+		cfg:          cfg,
+		auditService: auditService,
 	}
 
 	h.mux.Use(logger.ReqLogger()).Use(GzipMiddleware()).Use(AuthenticationMiddleware(&cfg.SecretKey))
@@ -112,11 +115,14 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 		return
 	}
 
-	result, ok, err := h.s.Shorten(c, req.URL, c.GetString("uid"))
+	uid := c.GetString("uid")
+	result, ok, err := h.s.Shorten(c, req.URL, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.auditService.NotifyAll("shorten", uid, req.URL)
 
 	if ok {
 		resp.Result = result
@@ -142,11 +148,14 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 
-	shortURL, ok, err := h.s.Shorten(c, originalURL, c.GetString("uid"))
+	uid := c.GetString("uid")
+	shortURL, ok, err := h.s.Shorten(c, originalURL, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.auditService.NotifyAll("shorten", uid, originalURL)
 
 	if ok {
 		c.Header("Content-Type", "text/plain")
@@ -173,6 +182,9 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 		c.AbortWithStatus(http.StatusGone)
 		return
 	}
+
+	uid := c.GetString("uid")
+	h.auditService.NotifyAll("follow", uid, originalURL.OriginalURL)
 
 	log.Printf("find shortId: %v and redirectURL: %v", id, originalURL)
 	c.Redirect(http.StatusTemporaryRedirect, originalURL.OriginalURL)
