@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"github.com/RussiaFPS/shortlink/internal/audit"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository"
@@ -66,7 +67,8 @@ func TestGetAPIShortURL(t *testing.T) {
 			cfg := config.NewConfig()
 			rep := repository.New(context.Background(), cfg)
 			ser := service.NewURLShortener(cfg, lenShortURL, rep)
-			NewURLShortenerHandler(router, cfg, ser)
+			auditService := audit.NewAuditService()
+			NewURLShortenerHandler(router, cfg, ser, auditService)
 			srv := &http.Server{
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
@@ -148,7 +150,8 @@ func TestGetShortURL(t *testing.T) {
 			cfg := config.NewConfig()
 			rep := repository.New(context.Background(), cfg)
 			ser := service.NewURLShortener(cfg, lenShortURL, rep)
-			NewURLShortenerHandler(router, cfg, ser)
+			auditService := audit.NewAuditService()
+			NewURLShortenerHandler(router, cfg, ser, auditService)
 			srv := &http.Server{
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
@@ -185,7 +188,8 @@ func TestGetOriginURL(t *testing.T) {
 	cfg := config.NewConfig()
 	rep := repository.New(context.Background(), cfg)
 	ser := service.NewURLShortener(cfg, lenShortURL, rep)
-	NewURLShortenerHandler(router, cfg, ser)
+	auditService := audit.NewAuditService()
+	NewURLShortenerHandler(router, cfg, ser, auditService)
 	srv := &http.Server{
 		Addr:    cfg.ServerAddr,
 		Handler: router.Handler(),
