@@ -29,10 +29,10 @@ type URLShortenerHandler struct {
 	mux          *gin.Engine
 	s            service.URLService
 	cfg          *config.Config
-	auditService *audit.AuditService
+	auditService *audit.ServAudit
 }
 
-func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService, auditService *audit.AuditService) URLHandler {
+func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService, auditService *audit.ServAudit) URLHandler {
 	h := &URLShortenerHandler{
 		mux:          router,
 		s:            ser,

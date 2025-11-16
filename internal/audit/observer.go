@@ -62,25 +62,26 @@ func (o *HTTPObserver) Notify(event Event) {
 		return
 	}
 
-	_, err = http.Post(o.url, "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(o.url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		log.Printf("failed to send audit event: %v", err)
 	}
+	defer resp.Body.Close()
 }
 
-type AuditService struct {
+type ServAudit struct {
 	observers []Observer
 }
 
-func NewAuditService() *AuditService {
-	return &AuditService{observers: []Observer{}}
+func NewAuditService() *ServAudit {
+	return &ServAudit{observers: []Observer{}}
 }
 
-func (s *AuditService) Register(observer Observer) {
+func (s *ServAudit) Register(observer Observer) {
 	s.observers = append(s.observers, observer)
 }
 
-func (s *AuditService) NotifyAll(action, userID, url string) {
+func (s *ServAudit) NotifyAll(action, userID, url string) {
 	event := Event{
 		Timestamp: time.Now().Unix(),
 		Action:    action,
