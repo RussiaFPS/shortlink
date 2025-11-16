@@ -44,7 +44,7 @@ func TestServAudit(t *testing.T) {
 }
 
 func TestLogObserver(t *testing.T) {
-	tmpfile, err := ioutil.TempFile("", "audit_test")
+	tmpfile, err := os.CreateTemp("", "audit_test")
 	assert.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 

@@ -5,7 +5,6 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -16,7 +15,7 @@ func TestMemStorage_New(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, storage)
 
-	tmpfile, err := ioutil.TempFile("", "test")
+	tmpfile, err := os.CreateTemp("", "test")
 	assert.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 
@@ -87,7 +86,7 @@ func TestMemStorage_loadRecords(t *testing.T) {
 		{"uuid": "s1", "short_url": "s1", "original_url": "https://ex1.com", "user_id": "u1"},
 		{"uuid": "s2", "short_url": "s2", "original_url": "https://ex2.com", "user_id": "u1"}
 	]`
-	tmpfile, err := ioutil.TempFile("", "test")
+	tmpfile, err := os.CreateTemp("", "test")
 	assert.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 

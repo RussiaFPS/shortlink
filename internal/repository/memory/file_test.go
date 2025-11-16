@@ -3,13 +3,12 @@ package memory
 import (
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestFileStorage_SaveAndGetData(t *testing.T) {
-	tmpfile, err := ioutil.TempFile("", "test_file_storage")
+	tmpfile, err := os.CreateTemp("", "test_file_storage")
 	assert.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 
