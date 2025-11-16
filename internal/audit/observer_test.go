@@ -3,7 +3,6 @@ package audit
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -57,7 +56,7 @@ func TestLogObserver(t *testing.T) {
 	}
 	logObserver.Notify(event)
 
-	data, err := ioutil.ReadFile(tmpfile.Name())
+	data, err := os.ReadFile(tmpfile.Name())
 	assert.NoError(t, err)
 
 	var loggedEvent Event
