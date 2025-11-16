@@ -154,3 +154,13 @@ func TestURLShortenerService_DeleteURLs(t *testing.T) {
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
+
+func BenchmarkRandShortID(b *testing.B) {
+	s := &URLShortenerService{
+		shortLen: 8,
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.randShortID()
+	}
+}
