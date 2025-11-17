@@ -3,7 +3,7 @@ services:
   database:
     image: postgres:latest
     restart: always
-    container_name: "postgres"
+    container_name: "postgres-ya"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=qwer1234

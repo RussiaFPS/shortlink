@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -26,6 +27,10 @@ func main() {
 	if err := logger.NewLogger(); err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	auditService := audit.NewAuditService()
 	if cfg.AuditFile != "" {
