@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// NewPostgres creates a new Postgres connection.
 func NewPostgres(ctx context.Context, dataSourceName string) (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
