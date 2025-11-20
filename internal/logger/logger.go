@@ -8,8 +8,10 @@ import (
 	"time"
 )
 
+// Log is a global logger instance.
 var Log = zap.NewNop()
 
+// NewLogger initializes the global logger.
 func NewLogger() error {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -25,6 +27,7 @@ func NewLogger() error {
 	return nil
 }
 
+// ReqLogger is a Gin middleware for logging HTTP requests.
 func ReqLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
