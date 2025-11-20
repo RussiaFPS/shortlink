@@ -15,7 +15,7 @@ import (
 )
 
 // Example demonstrates the usage of the GetShortURL endpoint.
-func ExampleGetShortURL() {
+func ExampleURLShortenerHandler_GetShortURL() {
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 	cfg := config.NewConfig()
