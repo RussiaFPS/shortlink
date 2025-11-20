@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// AuthenticationMiddleware is a middleware that handles user authentication.
 func AuthenticationMiddleware(secretKey *string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie("auth")
@@ -45,6 +46,7 @@ func AuthenticationMiddleware(secretKey *string) gin.HandlerFunc {
 	}
 }
 
+// genCookie generates a new cookie.
 func genCookie(secretKey *string) (string, string, *time.Time, error) {
 	newUUID, err := uuid.NewUUID()
 	if err != nil {
@@ -60,6 +62,7 @@ func genCookie(secretKey *string) (string, string, *time.Time, error) {
 	return encryptedCookie, uid, &expiration, nil
 }
 
+// encryptCookie encrypts a cookie value.
 func encryptCookie(cookieValue string, secretKey []byte) (string, error) {
 	block, err := aes.NewCipher(secretKey)
 	if err != nil {
@@ -75,6 +78,7 @@ func encryptCookie(cookieValue string, secretKey []byte) (string, error) {
 	return base64.URLEncoding.EncodeToString(ciphertext), nil
 }
 
+// decryptCookie decrypts a cookie value.
 func decryptCookie(cipherText string, secretKey []byte) (string, error) {
 	ciphertext, err := base64.URLEncoding.DecodeString(cipherText)
 	if err != nil {

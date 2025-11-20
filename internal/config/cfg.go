@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+// Config is a struct that holds the configuration for the application.
 type Config struct {
 	ServerAddr      string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
 	BaseURL         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
@@ -16,6 +17,7 @@ type Config struct {
 	AuditURL        string `env:"AUDIT_URL"`
 }
 
+// NewConfig creates a new Config object.
 func NewConfig() *Config {
 	cfg := &Config{}
 

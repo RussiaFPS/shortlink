@@ -15,6 +15,7 @@ import (
 	"strings"
 )
 
+// URLHandler is an interface for handling URL shortening requests.
 type URLHandler interface {
 	GetAPIShortURL(c *gin.Context)
 	GetShortURL(c *gin.Context)
@@ -25,6 +26,7 @@ type URLHandler interface {
 	DeleteURLs(c *gin.Context)
 }
 
+// URLShortenerHandler is a struct that implements the URLHandler interface.
 type URLShortenerHandler struct {
 	mux          *gin.Engine
 	s            service.URLService
@@ -32,6 +34,7 @@ type URLShortenerHandler struct {
 	auditService *audit.ServAudit
 }
 
+// NewURLShortenerHandler is a constructor for URLShortenerHandler.
 func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService, auditService *audit.ServAudit) URLHandler {
 	h := &URLShortenerHandler{
 		mux:          router,
@@ -52,6 +55,7 @@ func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.
 	return h
 }
 
+// GetUserURL handles retrieving all URLs for a user.
 func (h *URLShortenerHandler) GetUserURL(c *gin.Context) {
 	uid := c.GetString("uid")
 	if uid == "" {
@@ -70,6 +74,7 @@ func (h *URLShortenerHandler) GetUserURL(c *gin.Context) {
 	c.JSON(http.StatusOK, originalURL)
 }
 
+// ShorterMulti handles shortening multiple URLs at once.
 func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
 	buffer := make([]model.MultiReq, 0)
 
@@ -87,6 +92,7 @@ func (h *URLShortenerHandler) ShorterMulti(c *gin.Context) {
 	c.JSON(http.StatusCreated, resp)
 }
 
+// PingDB handles checking the database connection.
 func (h *URLShortenerHandler) PingDB(c *gin.Context) {
 	if err := h.s.PingDB(c); err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -95,6 +101,7 @@ func (h *URLShortenerHandler) PingDB(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// GetAPIShortURL handles shortening a URL from a JSON request.
 func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 	req, resp := model.RequestGetAPIShortURL{}, model.ResponseGetAPIShortURL{}
 
@@ -134,6 +141,7 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 	c.JSON(http.StatusCreated, resp)
 }
 
+// GetShortURL handles shortening a URL from a plain text request.
 func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 	defer c.Request.Body.Close()
 	body, err := io.ReadAll(c.Request.Body)
@@ -167,6 +175,7 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 	c.String(http.StatusCreated, shortURL)
 }
 
+// GetOriginURL handles redirecting a short URL to the original URL.
 func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 	id := c.Param("id")
 
@@ -190,6 +199,7 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, originalURL.OriginalURL)
 }
 
+// DeleteURLs handles deleting multiple URLs for a user.
 func (h *URLShortenerHandler) DeleteURLs(c *gin.Context) {
 	uid := c.GetString("uid")
 	if uid == "" {

@@ -9,6 +9,7 @@ import (
 	"log"
 )
 
+// URLRepository is an interface for URL storage.
 type URLRepository interface {
 	GetShortURL(ctx context.Context, originalURL string) (string, bool)
 	StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error)
@@ -19,6 +20,7 @@ type URLRepository interface {
 	DeleteRecords(ids []string, userID string) error
 }
 
+// New creates a new URLRepository based on the provided configuration.
 func New(ctx context.Context, cfg *config.Config) URLRepository {
 	var storage URLRepository
 	var err error

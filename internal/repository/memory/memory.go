@@ -10,6 +10,7 @@ import (
 	"sync"
 )
 
+// MemStorage is a struct for in-memory URL storage.
 type MemStorage struct {
 	cfg        *config.Config
 	mu         sync.RWMutex
@@ -19,6 +20,7 @@ type MemStorage struct {
 	storage    IStorage
 }
 
+// New creates a new MemStorage.
 func New(cfg *config.Config) (*MemStorage, error) {
 	s := &MemStorage{
 		urls:       make(map[string]string),
@@ -36,6 +38,7 @@ func New(cfg *config.Config) (*MemStorage, error) {
 	return s, nil
 }
 
+// loadRecords loads records from a file.
 func (m *MemStorage) loadRecords() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -60,6 +63,7 @@ func (m *MemStorage) loadRecords() error {
 	return nil
 }
 
+// GetShortURL retrieves a short URL from memory.
 func (m *MemStorage) GetShortURL(ctx context.Context, originalURL string) (string, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -71,6 +75,7 @@ func (m *MemStorage) GetShortURL(ctx context.Context, originalURL string) (strin
 	return "", false
 }
 
+// StorageURL stores a URL in memory.
 func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -100,6 +105,7 @@ func (m *MemStorage) StorageURL(ctx context.Context, originalURL string, shortID
 	return shortID, nil
 }
 
+// GetOriginalURL retrieves an original URL from memory.
 func (m *MemStorage) GetOriginalURL(ctx context.Context, shortID string) (*model.URLStorage, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -112,10 +118,12 @@ func (m *MemStorage) GetOriginalURL(ctx context.Context, shortID string) (*model
 	return nil, false
 }
 
+// Ping checks the database connection.
 func (m *MemStorage) Ping(ctx context.Context) error {
 	return fmt.Errorf("db not ready")
 }
 
+// StoreMultiURL stores multiple URLs in memory.
 func (m *MemStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -146,6 +154,7 @@ func (m *MemStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) 
 	return resp, nil
 }
 
+// FindAllByUserID finds all URLs for a user.
 func (m *MemStorage) FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
 	userURLs := make([]model.RespUserURL, 0)
 	for _, v := range m.records {
@@ -160,6 +169,7 @@ func (m *MemStorage) FindAllByUserID(ctx context.Context, userID string) ([]mode
 	return userURLs, nil
 }
 
+// DeleteRecords deletes records from memory.
 func (m *MemStorage) DeleteRecords(ids []string, userID string) error {
 	return nil
 }

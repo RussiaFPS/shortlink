@@ -13,6 +13,7 @@ import (
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+// URLService is an interface for URL shortening services.
 type URLService interface {
 	Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error)
 	GetOriginal(ctx context.Context, shortURL string) (*model.URLStorage, bool)
@@ -24,12 +25,14 @@ type URLService interface {
 	DeleteURLs(req *[]string, userID string) error
 }
 
+// URLShortenerService is a struct that implements the URLService interface.
 type URLShortenerService struct {
 	cfg      *config.Config
 	shortLen int
 	r        repository.URLRepository
 }
 
+// NewURLShortener is a constructor for URLShortenerService.
 func NewURLShortener(cfg *config.Config, shortLen int, rep repository.URLRepository) URLService {
 	return &URLShortenerService{
 		shortLen: shortLen,
@@ -38,10 +41,12 @@ func NewURLShortener(cfg *config.Config, shortLen int, rep repository.URLReposit
 	}
 }
 
+// PingDB checks the database connection.
 func (s *URLShortenerService) PingDB(ctx context.Context) error {
 	return s.r.Ping(ctx)
 }
 
+// generateShortID generates a random short ID and ensures it's unique.
 func (s *URLShortenerService) generateShortID(ctx context.Context) string {
 	var id string
 	for {
@@ -53,6 +58,7 @@ func (s *URLShortenerService) generateShortID(ctx context.Context) string {
 	return id
 }
 
+// randShortID generates a random short ID.
 func (s *URLShortenerService) randShortID() string {
 	id := make([]byte, s.shortLen)
 	for i := range id {
@@ -62,6 +68,7 @@ func (s *URLShortenerService) randShortID() string {
 	return string(id)
 }
 
+// Shorten shortens a URL.
 func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error) {
 	log.Printf("URLShortenerService:Shorten with originalURL: %s", originalURL)
 
@@ -77,11 +84,13 @@ func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string, u
 	return fmt.Sprintf("%s/%s", s.cfg.BaseURL, URL), false, nil
 }
 
+// GetOriginal retrieves the original URL from a short ID.
 func (s *URLShortenerService) GetOriginal(ctx context.Context, shortID string) (*model.URLStorage, bool) {
 	log.Printf("URLShortenerService:GetOriginal with shortID: %s", shortID)
 	return s.r.GetOriginalURL(ctx, shortID)
 }
 
+// ShorterMulti shortens multiple URLs at once.
 func (s *URLShortenerService) ShorterMulti(ctx context.Context, req []model.MultiReq, userID string) ([]model.MultiResp, error) {
 	data, oldData := make([]model.URLStorage, 0), make([]model.MultiResp, 0)
 
@@ -115,6 +124,7 @@ func (s *URLShortenerService) ShorterMulti(ctx context.Context, req []model.Mult
 	return resp, nil
 }
 
+// GetShortenedURLByUserID retrieves all URLs for a user.
 func (s *URLShortenerService) GetShortenedURLByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
 	data, err := s.r.FindAllByUserID(ctx, userID)
 	if err != nil {
@@ -129,6 +139,7 @@ func (s *URLShortenerService) GetShortenedURLByUserID(ctx context.Context, userI
 	return data, nil
 }
 
+// DeleteURLs deletes multiple URLs for a user.
 func (s *URLShortenerService) DeleteURLs(req *[]string, userID string) error {
 	return s.r.DeleteRecords(*req, userID)
 }

@@ -13,12 +13,14 @@ import (
 	"time"
 )
 
+// DBStorage is a struct for working with a database.
 type DBStorage struct {
 	config       *config.Config
 	pgxPool      *pgxpool.Pool
 	urlsToDelete chan model.DellURL
 }
 
+// New creates a new DBStorage.
 func New(ctx context.Context, cfg *config.Config, deleteChan chan model.DellURL) (*DBStorage, error) {
 	dbConn, err := postgres.NewPostgres(ctx, cfg.DSN)
 	if err != nil {
@@ -37,6 +39,7 @@ func New(ctx context.Context, cfg *config.Config, deleteChan chan model.DellURL)
 	}, nil
 }
 
+// initTable initializes the database table.
 func initTable(ctx context.Context, db *pgxpool.Pool) error {
 	if _, err := db.Exec(ctx, createTable); err != nil {
 		return err
@@ -44,6 +47,7 @@ func initTable(ctx context.Context, db *pgxpool.Pool) error {
 	return nil
 }
 
+// Ping checks the database connection.
 func (db *DBStorage) Ping(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
@@ -51,6 +55,7 @@ func (db *DBStorage) Ping(ctx context.Context) error {
 	return db.pgxPool.Ping(ctx)
 }
 
+// GetShortURL retrieves a short URL from the database.
 func (db *DBStorage) GetShortURL(ctx context.Context, originalURL string) (string, bool) {
 	var ur string
 
@@ -66,6 +71,7 @@ func (db *DBStorage) GetShortURL(ctx context.Context, originalURL string) (strin
 	return ur, true
 }
 
+// StorageURL stores a URL in the database.
 func (db *DBStorage) StorageURL(ctx context.Context, originalURL string, shortID string, userID string) (string, error) {
 	var shortURL string
 	log.Printf("DBStorage:StorageURL with originalURL: %s,shortID: %s", originalURL, shortID)
@@ -77,6 +83,7 @@ func (db *DBStorage) StorageURL(ctx context.Context, originalURL string, shortID
 	return shortURL, nil
 }
 
+// GetOriginalURL retrieves an original URL from the database.
 func (db *DBStorage) GetOriginalURL(ctx context.Context, shortID string) (*model.URLStorage, bool) {
 	var ur model.URLStorage
 
@@ -92,6 +99,7 @@ func (db *DBStorage) GetOriginalURL(ctx context.Context, shortID string) (*model
 	return &ur, true
 }
 
+// StoreMultiURL stores multiple URLs in the database.
 func (db *DBStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) ([]model.MultiResp, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -125,6 +133,7 @@ func (db *DBStorage) StoreMultiURL(ctx context.Context, req []model.URLStorage) 
 	return response, nil
 }
 
+// FindAllByUserID finds all URLs for a user.
 func (db *DBStorage) FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error) {
 	rows, err := db.pgxPool.Query(ctx, selectFindAllByUser, userID)
 	if err != nil {
@@ -146,11 +155,13 @@ func (db *DBStorage) FindAllByUserID(ctx context.Context, userID string) ([]mode
 	return userURLs, nil
 }
 
+// DeleteRecords deletes records from the database.
 func (db *DBStorage) DeleteRecords(ids []string, userID string) error {
 	db.urlsToDelete <- model.DellURL{UserID: userID, URLs: ids}
 	return nil
 }
 
+// WorkerDeleteURLs is a worker that deletes URLs from the database.
 func WorkerDeleteURLs(ch <-chan model.DellURL, pool *pgxpool.Pool) {
 	for userUrls := range ch {
 		if _, err := pool.Exec(context.Background(), dellURL, userUrls.URLs, userUrls.UserID); err != nil {
