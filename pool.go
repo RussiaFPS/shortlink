@@ -2,6 +2,7 @@ package shortlink
 
 import "sync"
 
+// Resetter defines the interface for objects that can be reset.
 type Resetter interface {
 	Reset()
 }
