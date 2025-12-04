@@ -41,8 +41,35 @@ func main() {
 		}
 
 		for pkgName, pkg := range pkgs {
-			if err := processPackage(path, pkgName, pkg); err != nil {
-				log.Printf("Error processing package %s: %v", pkgName, err)
+			var resetFuncs []string
+
+			for _, file := range pkg.Files {
+				for _, decl := range file.Decls {
+					genDecl, ok := decl.(*ast.GenDecl)
+					if !ok || genDecl.Tok != token.TYPE {
+						continue
+					}
+
+					for _, spec := range genDecl.Specs {
+						typeSpec, ok := spec.(*ast.TypeSpec)
+						if !ok {
+							continue
+						}
+
+						structType, ok := typeSpec.Type.(*ast.StructType)
+						if !ok {
+							continue
+						}
+
+						if hasGenerateComment(genDecl) {
+							resetFuncs = append(resetFuncs, generateResetFunc(typeSpec.Name.Name, structType))
+						}
+					}
+				}
+			}
+
+			if len(resetFuncs) > 0 {
+				return writeResetFile(path, pkgName, resetFuncs)
 			}
 		}
 		return nil
@@ -50,40 +77,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error walking through the project: %v", err)
 	}
-}
-
-func processPackage(path, pkgName string, pkg *ast.Package) error {
-	var resetFuncs []string
-
-	for _, file := range pkg.Files {
-		for _, decl := range file.Decls {
-			genDecl, ok := decl.(*ast.GenDecl)
-			if !ok || genDecl.Tok != token.TYPE {
-				continue
-			}
-
-			for _, spec := range genDecl.Specs {
-				typeSpec, ok := spec.(*ast.TypeSpec)
-				if !ok {
-					continue
-				}
-
-				structType, ok := typeSpec.Type.(*ast.StructType)
-				if !ok {
-					continue
-				}
-
-				if hasGenerateComment(genDecl) {
-					resetFuncs = append(resetFuncs, generateResetFunc(typeSpec.Name.Name, structType))
-				}
-			}
-		}
-	}
-
-	if len(resetFuncs) > 0 {
-		return writeResetFile(path, pkgName, resetFuncs)
-	}
-	return nil
 }
 
 func hasGenerateComment(decl *ast.GenDecl) bool {
