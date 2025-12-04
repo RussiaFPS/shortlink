@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/audit"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/handler"
@@ -19,9 +20,26 @@ import (
 	"time"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
+
 const lenShortURL = 8
 
 func main() {
+	printOrDefault := func(value string) string {
+		if value == "" {
+			return "N/A"
+		}
+		return value
+	}
+
+	fmt.Printf("Build version: %s\n", printOrDefault(buildVersion))
+	fmt.Printf("Build date: %s\n", printOrDefault(buildDate))
+	fmt.Printf("Build commit: %s\n", printOrDefault(buildCommit))
+
 	cfg := config.NewConfig()
 
 	if err := logger.NewLogger(); err != nil {
