@@ -14,6 +14,10 @@ type MockURLRepository struct {
 	mock.Mock
 }
 
+func (m *MockURLRepository) Close() {
+	m.Called()
+}
+
 func (m *MockURLRepository) GetShortURL(ctx context.Context, originalURL string) (string, bool) {
 	args := m.Called(ctx, originalURL)
 	return args.String(0), args.Bool(1)
