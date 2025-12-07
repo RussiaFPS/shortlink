@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository"
 	"log"
-	"math/rand"
+	"math/big"
 	"strings"
 )
 
@@ -61,8 +62,13 @@ func (s *URLShortenerService) generateShortID(ctx context.Context) string {
 // randShortID generates a random short ID.
 func (s *URLShortenerService) randShortID() string {
 	id := make([]byte, s.shortLen)
+	numChars := big.NewInt(int64(len(chars)))
 	for i := range id {
-		id[i] = chars[rand.Intn(len(chars))]
+		n, err := rand.Int(rand.Reader, numChars)
+		if err != nil {
+			log.Panicf("failed to generate random number for short ID: %v", err)
+		}
+		id[i] = chars[n.Int64()]
 	}
 
 	return string(id)

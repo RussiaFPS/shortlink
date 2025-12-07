@@ -63,6 +63,7 @@ func main() {
 	ser := service.NewURLShortener(cfg, lenShortURL, rep)
 	handler.NewURLShortenerHandler(router, cfg, ser, auditService)
 
+	defer rep.Close()
 	srv := &http.Server{
 		Addr:    cfg.ServerAddr,
 		Handler: router.Handler(),
@@ -76,7 +77,7 @@ func main() {
 
 	log.Printf("Server started at %v", cfg.ServerAddr)
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
 	log.Println("Shutdown Server ...")
 

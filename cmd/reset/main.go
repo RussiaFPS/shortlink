@@ -100,6 +100,9 @@ func generateResetFunc(structName string, structType *ast.StructType) string {
 	fmt.Fprintln(&body)
 
 	for _, field := range structType.Fields.List {
+		if len(field.Names) == 0 {
+			continue
+		}
 		fieldName := field.Names[0].Name
 		switch t := field.Type.(type) {
 		case *ast.Ident: // Primitives

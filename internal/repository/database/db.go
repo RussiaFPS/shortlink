@@ -169,3 +169,9 @@ func WorkerDeleteURLs(ch <-chan model.DellURL, pool *pgxpool.Pool) {
 		}
 	}
 }
+
+// Close closes the database connection.
+func (db *DBStorage) Close() {
+	close(db.urlsToDelete)
+	db.pgxPool.Close()
+}

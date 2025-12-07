@@ -18,6 +18,7 @@ type URLRepository interface {
 	Ping(ctx context.Context) error
 	FindAllByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error)
 	DeleteRecords(ids []string, userID string) error
+	Close()
 }
 
 // New creates a new URLRepository based on the provided configuration.

@@ -173,3 +173,6 @@ func (m *MemStorage) FindAllByUserID(ctx context.Context, userID string) ([]mode
 func (m *MemStorage) DeleteRecords(ids []string, userID string) error {
 	return nil
 }
+
+// Close closes memory storage.
+func (m *MemStorage) Close() {}
