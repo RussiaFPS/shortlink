@@ -9,3 +9,8 @@ migrate_down:
 
 run:
 	go run cmd/shortener/main.go -d "postgres://postgres:qwer1234@localhost:5432/shortlink"
+
+certs:
+	@mkdir -p certs
+	@openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem \
+	  -days 365 -nodes -subj "/C=US/ST=California/L=San Francisco/O=MyOrg/OU=MyUnit/CN=localhost"

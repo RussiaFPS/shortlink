@@ -15,6 +15,9 @@ type Config struct {
 	SecretKey       string `env:"SECRET_KEY" envDefault:"abcdefghijklmnopqrstuvwxyz123456"`
 	AuditFile       string `env:"AUDIT_FILE"`
 	AuditURL        string `env:"AUDIT_URL"`
+	EnableHTTPS     bool   `env:"ENABLE_HTTPS"`
+	CertFile        string `env:"CERT_FILE" envDefault:"certs/cert.pem"`
+	KeyFile         string `env:"KEY_FILE" envDefault:"certs/key.pem"`
 }
 
 // NewConfig creates a new Config object.
@@ -29,9 +32,12 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "File storage path")
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL for shortened links")
 	flag.StringVar(&cfg.DSN, "d", cfg.DSN, "DSN for database connection")
-	flag.StringVar(&cfg.SecretKey, "s", cfg.SecretKey, "Secret key for cryptographic")
+	flag.StringVar(&cfg.SecretKey, "k", cfg.SecretKey, "Secret key for cryptographic")
 	flag.StringVar(&cfg.AuditFile, "audit-file", cfg.AuditFile, "Audit file path")
 	flag.StringVar(&cfg.AuditURL, "audit-url", cfg.AuditURL, "Audit URL")
+	flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "Enable HTTPS")
+	flag.StringVar(&cfg.CertFile, "cert-file", cfg.CertFile, "Certificate file path")
+	flag.StringVar(&cfg.KeyFile, "key-file", cfg.KeyFile, "Key file path")
 	flag.Parse()
 
 	log.Printf("CFG: %v\n", cfg)
