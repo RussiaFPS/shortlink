@@ -1,21 +1,24 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"github.com/caarlos0/env/v11"
 	"log"
+	"os"
 )
 
 // Config is a struct that holds the configuration for the application.
 type Config struct {
-	ServerAddr      string `env:"SERVER_ADDRESS" envDefault:"localhost:8080"`
-	BaseURL         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"URL.json"`
-	DSN             string `env:"DATABASE_DSN" envDefault:"postgres://postgres:qwer1234@localhost:5432/shortlink"`
+	ServerAddr      string `env:"SERVER_ADDRESS" json:"server_address"`
+	BaseURL         string `env:"BASE_URL" json:"base_url"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" json:"file_storage_path"`
+	DSN             string `env:"DATABASE_DSN" json:"database_dsn"`
+	EnableHTTPS     bool   `env:"ENABLE_HTTPS" json:"enable_https"`
+	Config          string `env:"CONFIG"`
 	SecretKey       string `env:"SECRET_KEY" envDefault:"abcdefghijklmnopqrstuvwxyz123456"`
 	AuditFile       string `env:"AUDIT_FILE"`
 	AuditURL        string `env:"AUDIT_URL"`
-	EnableHTTPS     bool   `env:"ENABLE_HTTPS"`
 	CertFile        string `env:"CERT_FILE" envDefault:"certs/cert.pem"`
 	KeyFile         string `env:"KEY_FILE" envDefault:"certs/key.pem"`
 }
@@ -26,6 +29,20 @@ func NewConfig() *Config {
 
 	if err := env.Parse(cfg); err != nil {
 		log.Printf("failed to load envs: %s", err.Error())
+	}
+
+	flag.StringVar(&cfg.Config, "c", cfg.Config, "Config file path")
+	flag.StringVar(&cfg.Config, "config", cfg.Config, "Config file path")
+
+	if cfg.Config != "" {
+		data, err := os.ReadFile(cfg.Config)
+		if err != nil {
+			log.Printf("failed to read config file: %s", err.Error())
+		} else {
+			if err := json.Unmarshal(data, cfg); err != nil {
+				log.Printf("failed to unmarshal config file: %s", err.Error())
+			}
+		}
 	}
 
 	flag.StringVar(&cfg.ServerAddr, "a", cfg.ServerAddr, "HTTP server address")
@@ -39,6 +56,10 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.CertFile, "cert-file", cfg.CertFile, "Certificate file path")
 	flag.StringVar(&cfg.KeyFile, "key-file", cfg.KeyFile, "Key file path")
 	flag.Parse()
+
+	if err := env.Parse(cfg); err != nil {
+		log.Printf("failed to load envs: %s", err.Error())
+	}
 
 	log.Printf("CFG: %v\n", cfg)
 	return cfg
