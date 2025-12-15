@@ -22,6 +22,12 @@ type Observer interface {
 	Notify(event Event)
 }
 
+// AuditService is an interface for an audit service.
+type AuditService interface {
+	Register(observer Observer)
+	NotifyAll(action, userID, url string)
+}
+
 // LogObserver is a struct that implements the Observer interface and logs events to a file.
 type LogObserver struct {
 	filePath string
@@ -83,7 +89,7 @@ type ServAudit struct {
 }
 
 // NewAuditService creates a new ServAudit.
-func NewAuditService() *ServAudit {
+func NewAuditService() AuditService {
 	return &ServAudit{observers: []Observer{}}
 }
 

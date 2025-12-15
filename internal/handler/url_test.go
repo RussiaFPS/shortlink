@@ -66,9 +66,9 @@ func TestGetAPIShortURL(t *testing.T) {
 			router := gin.Default()
 			cfg := config.NewConfig()
 			rep := repository.New(context.Background(), cfg)
-			ser := service.NewURLShortener(cfg, lenShortURL, rep)
 			auditService := audit.NewAuditService()
-			NewURLShortenerHandler(router, cfg, ser, auditService)
+			ser := service.NewURLShortener(cfg, lenShortURL, rep, auditService)
+			NewURLShortenerHandler(router, cfg, ser)
 			srv := &http.Server{
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
@@ -149,9 +149,9 @@ func TestGetShortURL(t *testing.T) {
 			router := gin.Default()
 			cfg := config.NewConfig()
 			rep := repository.New(context.Background(), cfg)
-			ser := service.NewURLShortener(cfg, lenShortURL, rep)
 			auditService := audit.NewAuditService()
-			NewURLShortenerHandler(router, cfg, ser, auditService)
+			ser := service.NewURLShortener(cfg, lenShortURL, rep, auditService)
+			NewURLShortenerHandler(router, cfg, ser)
 			srv := &http.Server{
 				Addr:    cfg.ServerAddr,
 				Handler: router.Handler(),
@@ -187,9 +187,9 @@ func TestGetOriginURL(t *testing.T) {
 	router := gin.Default()
 	cfg := config.NewConfig()
 	rep := repository.New(context.Background(), cfg)
-	ser := service.NewURLShortener(cfg, lenShortURL, rep)
 	auditService := audit.NewAuditService()
-	NewURLShortenerHandler(router, cfg, ser, auditService)
+	ser := service.NewURLShortener(cfg, lenShortURL, rep, auditService)
+	NewURLShortenerHandler(router, cfg, ser)
 	srv := &http.Server{
 		Addr:    cfg.ServerAddr,
 		Handler: router.Handler(),

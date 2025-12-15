@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"github.com/RussiaFPS/shortlink/internal/audit"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/model"
 	"github.com/RussiaFPS/shortlink/internal/repository"
@@ -17,7 +18,7 @@ const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 // URLService is an interface for URL shortening services.
 type URLService interface {
 	Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error)
-	GetOriginal(ctx context.Context, shortURL string) (*model.URLStorage, bool)
+	GetOriginal(ctx context.Context, shortURL string, userID string) (*model.URLStorage, bool)
 	ShorterMulti(ctx context.Context, req []model.MultiReq, userID string) ([]model.MultiResp, error)
 	PingDB(ctx context.Context) error
 	randShortID() string
@@ -28,17 +29,19 @@ type URLService interface {
 
 // URLShortenerService is a struct that implements the URLService interface.
 type URLShortenerService struct {
-	cfg      *config.Config
-	shortLen int
-	r        repository.URLRepository
+	cfg          *config.Config
+	shortLen     int
+	r            repository.URLRepository
+	auditService audit.AuditService
 }
 
 // NewURLShortener is a constructor for URLShortenerService.
-func NewURLShortener(cfg *config.Config, shortLen int, rep repository.URLRepository) URLService {
+func NewURLShortener(cfg *config.Config, shortLen int, rep repository.URLRepository, auditService audit.AuditService) URLService {
 	return &URLShortenerService{
-		shortLen: shortLen,
-		cfg:      cfg,
-		r:        rep,
+		shortLen:     shortLen,
+		cfg:          cfg,
+		r:            rep,
+		auditService: auditService,
 	}
 }
 
@@ -78,6 +81,8 @@ func (s *URLShortenerService) randShortID() string {
 func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string, userID string) (string, bool, error) {
 	log.Printf("URLShortenerService:Shorten with originalURL: %s", originalURL)
 
+	s.auditService.NotifyAll("shorten", userID, originalURL)
+
 	if shortURL, ok := s.r.GetShortURL(ctx, originalURL); ok {
 		return fmt.Sprintf("%s/%s", s.cfg.BaseURL, shortURL), true, nil
 	}
@@ -91,9 +96,13 @@ func (s *URLShortenerService) Shorten(ctx context.Context, originalURL string, u
 }
 
 // GetOriginal retrieves the original URL from a short ID.
-func (s *URLShortenerService) GetOriginal(ctx context.Context, shortID string) (*model.URLStorage, bool) {
+func (s *URLShortenerService) GetOriginal(ctx context.Context, shortID string, userID string) (*model.URLStorage, bool) {
 	log.Printf("URLShortenerService:GetOriginal with shortID: %s", shortID)
-	return s.r.GetOriginalURL(ctx, shortID)
+	url, ok := s.r.GetOriginalURL(ctx, shortID)
+	if ok {
+		s.auditService.NotifyAll("follow", userID, url.OriginalURL)
+	}
+	return url, ok
 }
 
 // ShorterMulti shortens multiple URLs at once.

@@ -23,9 +23,9 @@ func ExampleURLShortenerHandler_GetShortURL() {
 	cfg.FileStoragePath = ""
 
 	rep := repository.New(context.Background(), cfg)
-	ser := service.NewURLShortener(cfg, 8, rep)
 	auditService := audit.NewAuditService()
-	handler.NewURLShortenerHandler(router, cfg, ser, auditService)
+	ser := service.NewURLShortener(cfg, 8, rep, auditService)
+	handler.NewURLShortenerHandler(router, cfg, ser)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/", strings.NewReader("https://yandex.ru"))

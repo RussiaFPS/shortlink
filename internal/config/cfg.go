@@ -10,8 +10,8 @@ import (
 
 // Config is a struct that holds the configuration for the application.
 type Config struct {
-	ServerAddr      string `env:"SERVER_ADDRESS" json:"server_address"`
-	BaseURL         string `env:"BASE_URL" json:"base_url"`
+	ServerAddr      string `env:"SERVER_ADDRESS" json:"server_address" envDefault:"localhost:8080"`
+	BaseURL         string `env:"BASE_URL" json:"base_url" envDefault:"http://localhost:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH" json:"file_storage_path"`
 	DSN             string `env:"DATABASE_DSN" json:"database_dsn"`
 	EnableHTTPS     bool   `env:"ENABLE_HTTPS" json:"enable_https"`
@@ -33,18 +33,6 @@ func NewConfig() *Config {
 
 	flag.StringVar(&cfg.Config, "c", cfg.Config, "Config file path")
 	flag.StringVar(&cfg.Config, "config", cfg.Config, "Config file path")
-
-	if cfg.Config != "" {
-		data, err := os.ReadFile(cfg.Config)
-		if err != nil {
-			log.Printf("failed to read config file: %s", err.Error())
-		} else {
-			if err := json.Unmarshal(data, cfg); err != nil {
-				log.Printf("failed to unmarshal config file: %s", err.Error())
-			}
-		}
-	}
-
 	flag.StringVar(&cfg.ServerAddr, "a", cfg.ServerAddr, "HTTP server address")
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "File storage path")
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL for shortened links")
@@ -57,8 +45,15 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.KeyFile, "key-file", cfg.KeyFile, "Key file path")
 	flag.Parse()
 
-	if err := env.Parse(cfg); err != nil {
-		log.Printf("failed to load envs: %s", err.Error())
+	if cfg.Config != "" {
+		data, err := os.ReadFile(cfg.Config)
+		if err != nil {
+			log.Printf("failed to read config file: %s", err.Error())
+		} else {
+			if err := json.Unmarshal(data, cfg); err != nil {
+				log.Printf("failed to unmarshal config file: %s", err.Error())
+			}
+		}
 	}
 
 	log.Printf("CFG: %v\n", cfg)

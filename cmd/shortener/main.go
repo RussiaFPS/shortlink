@@ -60,8 +60,8 @@ func main() {
 
 	router := gin.Default()
 	rep := repository.New(context.Background(), cfg)
-	ser := service.NewURLShortener(cfg, lenShortURL, rep)
-	handler.NewURLShortenerHandler(router, cfg, ser, auditService)
+	ser := service.NewURLShortener(cfg, lenShortURL, rep, auditService)
+	handler.NewURLShortenerHandler(router, cfg, ser)
 
 	defer rep.Close()
 	srv := &http.Server{

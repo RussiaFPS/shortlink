@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/RussiaFPS/shortlink/internal/audit"
 	"github.com/RussiaFPS/shortlink/internal/config"
 	"github.com/RussiaFPS/shortlink/internal/logger"
 	"github.com/RussiaFPS/shortlink/internal/model"
@@ -28,19 +27,17 @@ type URLHandler interface {
 
 // URLShortenerHandler is a struct that implements the URLHandler interface.
 type URLShortenerHandler struct {
-	mux          *gin.Engine
-	s            service.URLService
-	cfg          *config.Config
-	auditService *audit.ServAudit
+	mux *gin.Engine
+	s   service.URLService
+	cfg *config.Config
 }
 
 // NewURLShortenerHandler is a constructor for URLShortenerHandler.
-func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService, auditService *audit.ServAudit) URLHandler {
+func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.URLService) URLHandler {
 	h := &URLShortenerHandler{
-		mux:          router,
-		s:            ser,
-		cfg:          cfg,
-		auditService: auditService,
+		mux: router,
+		s:   ser,
+		cfg: cfg,
 	}
 
 	h.mux.Use(logger.ReqLogger()).Use(GzipMiddleware()).Use(AuthenticationMiddleware(&cfg.SecretKey))
@@ -129,8 +126,6 @@ func (h *URLShortenerHandler) GetAPIShortURL(c *gin.Context) {
 		return
 	}
 
-	h.auditService.NotifyAll("shorten", uid, req.URL)
-
 	if ok {
 		resp.Result = result
 		c.JSON(http.StatusConflict, resp)
@@ -163,8 +158,6 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 		return
 	}
 
-	h.auditService.NotifyAll("shorten", uid, originalURL)
-
 	if ok {
 		c.Header("Content-Type", "text/plain")
 		c.String(http.StatusConflict, shortURL)
@@ -178,8 +171,9 @@ func (h *URLShortenerHandler) GetShortURL(c *gin.Context) {
 // GetOriginURL handles redirecting a short URL to the original URL.
 func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 	id := c.Param("id")
+	uid := c.GetString("uid")
 
-	originalURL, exists := h.s.GetOriginal(c, id)
+	originalURL, exists := h.s.GetOriginal(c, id, uid)
 	if !exists {
 		log.Printf("not exists: %s", id)
 		c.Status(http.StatusNotFound)
@@ -191,9 +185,6 @@ func (h *URLShortenerHandler) GetOriginURL(c *gin.Context) {
 		c.AbortWithStatus(http.StatusGone)
 		return
 	}
-
-	uid := c.GetString("uid")
-	h.auditService.NotifyAll("follow", uid, originalURL.OriginalURL)
 
 	log.Printf("find shortId: %v and redirectURL: %v", id, originalURL)
 	c.Redirect(http.StatusTemporaryRedirect, originalURL.OriginalURL)
