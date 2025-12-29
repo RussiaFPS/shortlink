@@ -169,6 +169,11 @@ func (m *MemStorage) FindAllByUserID(ctx context.Context, userID string) ([]mode
 	return userURLs, nil
 }
 
+// GetStats count users and link
+func (m *MemStorage) GetStats(ctx context.Context) *model.Stats {
+	return nil
+}
+
 // DeleteRecords deletes records from memory.
 func (m *MemStorage) DeleteRecords(ids []string, userID string) error {
 	return nil

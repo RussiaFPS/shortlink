@@ -30,3 +30,9 @@ type MultiResp struct {
 	CorrID   string `json:"correlation_id"`
 	ShortURL string `json:"short_url"`
 }
+
+// Stats by count user and link
+type Stats struct {
+	URLs  int `json:"urls"`
+	Users int `json:"users"`
+}

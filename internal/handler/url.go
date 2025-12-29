@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -23,6 +24,7 @@ type URLHandler interface {
 	ShorterMulti(c *gin.Context)
 	GetUserURL(c *gin.Context)
 	DeleteURLs(c *gin.Context)
+	GetStats(c *gin.Context)
 }
 
 // URLShortenerHandler is a struct that implements the URLHandler interface.
@@ -48,8 +50,27 @@ func NewURLShortenerHandler(router *gin.Engine, cfg *config.Config, ser service.
 	h.mux.GET("/:id", h.GetOriginURL)
 	h.mux.GET("/ping", h.PingDB)
 	h.mux.DELETE("/api/user/urls", h.DeleteURLs)
+	h.mux.GET("/api/internal/stats", h.GetStats)
 
 	return h
+}
+
+// GetStats handles user counter and urls
+func (h *URLShortenerHandler) GetStats(c *gin.Context) {
+	ipstr := c.GetHeader("X-Real-IP")
+
+	ip := net.ParseIP(ipstr)
+	if ip == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	stats, err := h.s.CheckIPMask(c, ip)
+	if err != nil {
+		c.Status(http.StatusForbidden)
+		return
+	}
+	c.JSON(http.StatusOK, stats)
 }
 
 // GetUserURL handles retrieving all URLs for a user.

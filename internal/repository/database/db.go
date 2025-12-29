@@ -161,6 +161,28 @@ func (db *DBStorage) DeleteRecords(ids []string, userID string) error {
 	return nil
 }
 
+// GetStats count users and links
+func (db *DBStorage) GetStats(ctx context.Context) *model.Stats {
+	var stats model.Stats
+	row := db.pgxPool.QueryRow(ctx, tokensCount)
+
+	if err := row.Scan(&stats.URLs); err != nil {
+		return nil
+	}
+
+	rowsUsers, err := db.pgxPool.Query(ctx, differentUsers)
+	if err != nil {
+		return nil
+	}
+
+	var users int
+	for rowsUsers.Next() {
+		users += 1
+	}
+	stats.Users = users
+	return &stats
+}
+
 // WorkerDeleteURLs is a worker that deletes URLs from the database.
 func WorkerDeleteURLs(ch <-chan model.DellURL, pool *pgxpool.Pool) {
 	for userUrls := range ch {

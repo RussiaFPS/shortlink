@@ -21,6 +21,7 @@ type Config struct {
 	AuditURL        string `env:"AUDIT_URL"`
 	CertFile        string `env:"CERT_FILE" envDefault:"certs/cert.pem"`
 	KeyFile         string `env:"KEY_FILE" envDefault:"certs/key.pem"`
+	Subnet          string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // NewConfig creates a new Config object.
@@ -43,6 +44,7 @@ func NewConfig() *Config {
 	flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "Enable HTTPS")
 	flag.StringVar(&cfg.CertFile, "cert-file", cfg.CertFile, "Certificate file path")
 	flag.StringVar(&cfg.KeyFile, "key-file", cfg.KeyFile, "Key file path")
+	flag.StringVar(&cfg.Subnet, "t", cfg.Subnet, "Subnet")
 	flag.Parse()
 
 	if cfg.Config != "" {

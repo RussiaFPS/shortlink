@@ -28,6 +28,13 @@ const dellURL = `
 	    WHERE short_url = ANY($1) AND user_id = $2;
 `
 
+const tokensCount = `
+	SELECT COUNT(*) FROM urls;
+`
+const differentUsers = `
+	SELECT DISTINCT user_id FROM urls;
+`
+
 const createTable = `
 	CREATE TABLE IF NOT EXISTS urls (
                         id SERIAL PRIMARY KEY,

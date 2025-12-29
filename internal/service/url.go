@@ -10,6 +10,7 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/repository"
 	"log"
 	"math/big"
+	"net"
 	"strings"
 )
 
@@ -25,6 +26,7 @@ type URLService interface {
 	generateShortID(ctx context.Context) string
 	GetShortenedURLByUserID(ctx context.Context, userID string) ([]model.RespUserURL, error)
 	DeleteURLs(req *[]string, userID string) error
+	CheckIPMask(ctx context.Context, ip net.IP) (*model.Stats, error)
 }
 
 // URLShortenerService is a struct that implements the URLService interface.
@@ -157,4 +159,21 @@ func (s *URLShortenerService) GetShortenedURLByUserID(ctx context.Context, userI
 // DeleteURLs deletes multiple URLs for a user.
 func (s *URLShortenerService) DeleteURLs(req *[]string, userID string) error {
 	return s.r.DeleteRecords(*req, userID)
+}
+
+// CheckIPMask check ip in valid mask
+func (s *URLShortenerService) CheckIPMask(ctx context.Context, ip net.IP) (*model.Stats, error) {
+	if s.cfg.Subnet == "" {
+		return nil, fmt.Errorf("empty subnet")
+	}
+
+	_, trustedSubnet, err := net.ParseCIDR(s.cfg.Subnet)
+	if err != nil {
+		return nil, err
+	}
+
+	if !trustedSubnet.Contains(ip) {
+		return nil, fmt.Errorf("ip not in subnet")
+	}
+	return s.r.GetStats(ctx), nil
 }
