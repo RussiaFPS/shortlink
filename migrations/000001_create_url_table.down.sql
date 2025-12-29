@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS idx_urls_shortURL;
+DROP INDEX IF EXISTS idx_urls_longURL;
+DROP TABLE IF EXISTS urls;
