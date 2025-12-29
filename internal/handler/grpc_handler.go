@@ -2,12 +2,11 @@ package handler
 
 import (
 	"context"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/RussiaFPS/shortlink/api/proto"
 	"github.com/RussiaFPS/shortlink/internal/service"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -16,15 +15,15 @@ type GRPCURLShortenerHandler struct {
 	urlShortener service.URLService
 }
 
-func NewGRPCURLShortenerHandler(s *grpc.Server, ser service.URLService) {
+func NewGRPCURLShortenerHandler(s *grpc.Server, urlShortener service.URLService) {
 	grpcHandler := &GRPCURLShortenerHandler{
-		urlShortener: ser,
+		urlShortener: urlShortener,
 	}
 	proto.RegisterShortenerServiceServer(s, grpcHandler)
 }
 
 func (h *GRPCURLShortenerHandler) ShortenURL(ctx context.Context, r *proto.URLShortenRequest) (*proto.URLShortenResponse, error) {
-	userID, ok := ctx.Value("userID").(string)
+	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "user id not found")
 	}
@@ -33,16 +32,15 @@ func (h *GRPCURLShortenerHandler) ShortenURL(ctx context.Context, r *proto.URLSh
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
 	if ok {
-		return nil, status.Error(codes.AlreadyExists, "url already exists")
+		return nil, status.Error(codes.AlreadyExists, "this url already exits")
 	}
 
 	return &proto.URLShortenResponse{Result: shortURL}, nil
 }
 
 func (h *GRPCURLShortenerHandler) ExpandURL(ctx context.Context, r *proto.URLExpandRequest) (*proto.URLExpandResponse, error) {
-	longURL, exists := h.urlShortener.GetOriginal(ctx, r.Id, ctx.Value("userID").(string))
+	longURL, exists := h.urlShortener.GetOriginal(ctx, r.Id, ctx.Value(UserIDKey).(string))
 	if !exists {
 		return nil, status.Error(codes.NotFound, "url not found")
 	}
@@ -51,7 +49,7 @@ func (h *GRPCURLShortenerHandler) ExpandURL(ctx context.Context, r *proto.URLExp
 }
 
 func (h *GRPCURLShortenerHandler) ListUserURLs(ctx context.Context, _ *emptypb.Empty) (*proto.UserURLsResponse, error) {
-	userID, ok := ctx.Value("userID").(string)
+	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "user id not found")
 	}

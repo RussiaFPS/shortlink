@@ -95,7 +95,7 @@ func main() {
 			log.Fatalf("failed to listen: %v", err)
 		}
 
-		s := grpc.NewServer(grpc.UnaryInterceptor(authInterceptor))
+		s := grpc.NewServer(grpc.UnaryInterceptor(authInterceptor(cfg.SecretKey)))
 		handler.NewGRPCURLShortenerHandler(s, ser)
 
 		log.Printf("gRPC server listening at %v", listen.Addr())
@@ -117,18 +117,30 @@ func main() {
 	log.Println("Server exiting")
 }
 
-func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, uHandler grpc.UnaryHandler) (interface{}, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, errors.New("metadata is not provided")
-	}
+func authInterceptor(secretKey string) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, uHandler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, errors.New("metadata is not provided")
+		}
 
-	values := md.Get("authorization")
-	if len(values) == 0 {
-		return nil, errors.New("authorization token is not provided")
-	}
+		values := md["authorization"]
+		if len(values) == 0 {
+			_, uid, _, err := service.GenCookie(&secretKey)
+			if err != nil {
+				return nil, errors.New("authorization token is not provided")
+			}
+			ctx = context.WithValue(ctx, handler.UserIDKey, uid)
+			return uHandler(ctx, req)
+		}
 
-	md = metadata.New(map[string]string{"User": values[0]})
-	ctx = metadata.NewOutgoingContext(context.Background(), md)
-	return uHandler(ctx, req)
+		token := values[0]
+		userID, err := service.DecryptCookie(token, []byte(secretKey))
+		if err != nil {
+			return nil, err
+		}
+
+		ctx = context.WithValue(ctx, handler.UserIDKey, userID)
+		return uHandler(ctx, req)
+	}
 }
