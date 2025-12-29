@@ -62,38 +62,54 @@ func genCookie(secretKey *string) (string, string, *time.Time, error) {
 	return encryptedCookie, uid, &expiration, nil
 }
 
-// encryptCookie encrypts a cookie value.
+// encryptCookie encrypts a cookie value using AES-GCM.
 func encryptCookie(cookieValue string, secretKey []byte) (string, error) {
 	block, err := aes.NewCipher(secretKey)
 	if err != nil {
 		return "", err
 	}
-	ciphertext := make([]byte, aes.BlockSize+len(cookieValue))
-	iv := ciphertext[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
 		return "", err
 	}
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], []byte(cookieValue))
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, []byte(cookieValue), nil)
 	return base64.URLEncoding.EncodeToString(ciphertext), nil
 }
 
-// decryptCookie decrypts a cookie value.
+// decryptCookie decrypts a cookie value using AES-GCM.
 func decryptCookie(cipherText string, secretKey []byte) (string, error) {
 	ciphertext, err := base64.URLEncoding.DecodeString(cipherText)
 	if err != nil {
 		return "", err
 	}
+
 	block, err := aes.NewCipher(secretKey)
 	if err != nil {
 		return "", err
 	}
-	if len(ciphertext) < aes.BlockSize {
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
 		return "", fmt.Errorf("ciphertext too short")
 	}
-	initVector := ciphertext[:aes.BlockSize]
-	ciphertext = ciphertext[aes.BlockSize:]
-	stream := cipher.NewCFBDecrypter(block, initVector)
-	stream.XORKeyStream(ciphertext, ciphertext)
-	return string(ciphertext), nil
+
+	nonce, encryptedMessage := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, encryptedMessage, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(plaintext), nil
 }
