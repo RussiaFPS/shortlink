@@ -123,11 +123,12 @@ func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServe
 		return nil, errors.New("metadata is not provided")
 	}
 
-	values := md["authorization"]
+	values := md.Get("authorization")
 	if len(values) == 0 {
 		return nil, errors.New("authorization token is not provided")
 	}
 
-	ctx = context.WithValue(ctx, "userID", values[0])
+	md = metadata.New(map[string]string{"User": values[0]})
+	ctx = metadata.NewOutgoingContext(context.Background(), md)
 	return uHandler(ctx, req)
 }
