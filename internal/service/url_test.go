@@ -58,6 +58,11 @@ func (m *MockURLRepository) DeleteRecords(urls []string, userID string) error {
 	return args.Error(0)
 }
 
+func (m *MockURLRepository) GetStats(ctx context.Context) *model.Stats {
+	args := m.Called(ctx)
+	return args.Get(0).(*model.Stats)
+}
+
 func (m *MockURLRepository) Ping(ctx context.Context) error {
 	args := m.Called(ctx)
 	return args.Error(0)
