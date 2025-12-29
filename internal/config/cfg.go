@@ -11,6 +11,7 @@ import (
 // Config is a struct that holds the configuration for the application.
 type Config struct {
 	ServerAddr      string `env:"SERVER_ADDRESS" json:"server_address" envDefault:"localhost:8080"`
+	GRPCAddr        string `env:"GRPC_ADDRESS" json:"grpc_address" envDefault:"localhost:8081"`
 	BaseURL         string `env:"BASE_URL" json:"base_url" envDefault:"http://localhost:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH" json:"file_storage_path"`
 	DSN             string `env:"DATABASE_DSN" json:"database_dsn"`
@@ -35,6 +36,7 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.Config, "c", cfg.Config, "Config file path")
 	flag.StringVar(&cfg.Config, "config", cfg.Config, "Config file path")
 	flag.StringVar(&cfg.ServerAddr, "a", cfg.ServerAddr, "HTTP server address")
+	flag.StringVar(&cfg.GRPCAddr, "g", cfg.GRPCAddr, "GRPC server address")
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "File storage path")
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base URL for shortened links")
 	flag.StringVar(&cfg.DSN, "d", cfg.DSN, "DSN for database connection")

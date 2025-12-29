@@ -11,7 +11,10 @@ import (
 	"github.com/RussiaFPS/shortlink/internal/repository"
 	"github.com/RussiaFPS/shortlink/internal/service"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"log"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -84,6 +87,23 @@ func main() {
 	}()
 
 	log.Printf("Server started at %v", cfg.ServerAddr)
+
+	// gRPC server
+	go func() {
+		listen, err := net.Listen("tcp", cfg.GRPCAddr)
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+
+		s := grpc.NewServer(grpc.UnaryInterceptor(authInterceptor))
+		handler.NewGRPCURLShortenerHandler(s, ser)
+
+		log.Printf("gRPC server listening at %v", listen.Addr())
+		if err := s.Serve(listen); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-quit
@@ -95,4 +115,19 @@ func main() {
 		log.Println("Server Shutdown:", err)
 	}
 	log.Println("Server exiting")
+}
+
+func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, uHandler grpc.UnaryHandler) (interface{}, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("metadata is not provided")
+	}
+
+	values := md["authorization"]
+	if len(values) == 0 {
+		return nil, errors.New("authorization token is not provided")
+	}
+
+	ctx = context.WithValue(ctx, "userID", values[0])
+	return uHandler(ctx, req)
 }
